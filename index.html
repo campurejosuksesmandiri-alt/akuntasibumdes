@@ -1540,31 +1540,42 @@ function switchModule(modId, element) {
         }
 
         async function syncToGasBackend(action, data) {
-            if (!state.gasUrl) return;
-            let payloadData = data;
-            if (action === 'tambahPemasukan' || action === 'tambahPengeluaran') {
-                payloadData = {
-                    id: data.id,
-                    tanggal: data.tanggal,
-                    unit: data.unit || "",
-                    kategori: data.kategori || "",
-                    keterangan: data.keterangan,
-                    nominal: data.nominal,
-                    petugas: currentUser ? currentUser.nama : "Admin" 
-                };
-            }
-            try {
-                await fetch(state.gasUrl, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: action, data: payloadData })
-                });
-            } catch (error) {
-                console.error("Gagal sinkronisasi otomatis ke cloud: ", error);
-            }
-        }
+    if (!state.gasUrl) return;
+    
+    // 1. Terjemahkan nama aksi dari HTML agar sesuai dengan perintah di GAS
+    let gasAction = action;
+    if (action === 'tambahPemasukan') {
+        gasAction = "add_pemasukan";
+    } else if (action === 'tambahPengeluaran') {
+        gasAction = "add_pengeluaran";
+    }
 
+    let payloadData = data;
+    if (action === 'tambahPemasukan' || action === 'tambahPengeluaran') {
+        payloadData = {
+            id: data.id,
+            tanggal: data.tanggal,
+            unit: data.unit || "",
+            kategori: data.kategori || "",
+            keterangan: data.keterangan,
+            nominal: data.nominal,
+            petugas: currentUser ? currentUser.nama : "Admin" 
+        };
+    }
+    
+    try {
+        await fetch(state.gasUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            // 2. Kirim gasAction ("add_pemasukan"/"add_pengeluaran") ke backend GAS
+            body: JSON.stringify({ action: gasAction, data: payloadData })
+        });
+        console.log("Sinkronisasi cloud berhasil dikirim:", gasAction);
+    } catch (error) {
+        console.error("Gagal sinkronisasi otomatis ke cloud: ", error);
+    }
+}
         async function tarikDataDariSheets() {
     const btnSync = document.querySelector("li[onclick*='tarikDataDariSheets']") || document.querySelector("button[onclick*='tarikDataDariSheets']");
     const originalText = btnSync ? btnSync.innerText : "🔄 Tarik Data Sheets";
