@@ -217,11 +217,13 @@
         }
 
         .main-content {
-            margin-left: 260px;
-            flex-grow: 1;
-            padding: 2rem;
-            min-width: 0;
-        }
+    margin-left: 260px;
+    flex-grow: 1;
+    padding: 2rem;
+    min-width: 0;
+    width: calc(100% - 260px); /* Memastikan lebar konten sisa dari sidebar */
+    box-sizing: border-box;
+}
 
         .top-bar {
             display: flex;
@@ -506,13 +508,16 @@
                 <span>BUMDes CSM</span>
             </div>
             <ul class="sidebar-menu">
-                <li class="sidebar-item active" onclick="switchModule('dashboard', this)">Dashboard</li>
-                <li class="sidebar-item" id="menu-pemasukan" onclick="switchModule('pemasukan', this)">Pemasukan</li>
-                <li class="sidebar-item" id="menu-pengeluaran" onclick="switchModule('pengeluaran', this)">Pengeluaran</li>
-                <li class="sidebar-item" onclick="switchModule('laporan', this)">Laporan Keuangan</li>
-                <li class="sidebar-item" style="background-color: #28a745; color: white; font-weight: bold;" onclick="tarikDataDariSheets()">🔄 Tarik Data Sheets</li>
-                <li class="sidebar-item" id="menu-pengaturan" onclick="switchModule('pengaturan', this)">Pengaturan & Profil</li>
-            </ul>
+    <li class="sidebar-item active" onclick="switchModule('dashboard', this)">Dashboard</li>
+    <li class="sidebar-item" id="menu-pemasukan" onclick="switchModule('pemasukan', this)">Pemasukan</li>
+    <li class="sidebar-item" id="menu-pengeluaran" onclick="switchModule('pengeluaran', this)">Pengeluaran</li>
+    
+    <li class="sidebar-item" id="menu-inventaris" onclick="switchModule('inventaris', this)">📦 Manajemen Inventaris</li>
+    
+    <li class="sidebar-item" onclick="switchModule('laporan', this)">Laporan Keuangan</li>
+    <li class="sidebar-item" style="background-color: #28a745; color: white; font-weight: bold;" onclick="tarikDataDariSheets()">🔄 Tarik Data Sheets</li>
+    <li class="sidebar-item" id="menu-pengaturan" onclick="switchModule('pengaturan', this)">Pengaturan & Profil</li>
+</ul>
 
             <div class="sidebar-footer">
                 <p>User: <span id="user-display-name">Admin</span></p>
@@ -561,56 +566,109 @@
                     </div>
                 </div>
             </section>
+<section id="mod-pemasukan" class="module-section">
+    <div class="section-header no-print">
+        <div class="section-title">Pencatatan Pemasukan Unit Usaha</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <label style="font-weight:600;">Periode Aktif:</label>
+            <input type="month" id="filter-pemasukan-bulan" class="form-control" style="width:180px;" onchange="loadTables()">
+        </div>
+    </div>
+    
+    <div class="form-grid no-print" id="form-pemasukan-container">
+        <div class="form-group">
+            <label>Tanggal Transaksi</label>
+            <input type="date" id="in-masuk-tanggal" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>Unit Usaha Penanggungjawab</label>
+            <select id="in-masuk-unit" class="form-control"></select>
+        </div>
+        <div class="form-group">
+            <label>Keterangan / Uraian Pendapatan</label>
+            <input type="text" id="in-masuk-keterangan" class="form-control" placeholder="Contoh: Hasil penjualan unit toko desa">
+        </div>
+        <div class="form-group">
+            <label>Nominal Pemasukan (Rp)</label>
+            <input type="number" id="in-masuk-nominal" class="form-control" placeholder="0">
+        </div>
+        <div class="form-group" style="display:flex; align-items:flex-end;">
+            <button class="btn" style="background-color:var(--success);" onclick="simpanTransaksiPemasukan()">Simpan Pemasukan</button>
+        </div>
+    </div>
 
-            <section id="mod-pemasukan" class="module-section">
-                <div class="section-header no-print">
-                    <div class="section-title">Pencatatan Pemasukan Kas</div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <label style="font-weight:600;">Periode Aktif:</label>
-                        <input type="month" id="filter-pemasukan-bulan" class="form-control" style="width:180px;" onchange="loadTables()">
-                    </div>
-                </div>
-                
-                <div class="form-grid no-print" id="form-pemasukan-container">
-                    <div class="form-group">
-                        <label>Tanggal Transaksi</label>
-                        <input type="date" id="in-masuk-tanggal" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Unit Usaha</label>
-                        <select id="in-masuk-unit" class="form-control"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Keterangan Transaksi</label>
-                        <input type="text" id="in-masuk-keterangan" class="form-control" placeholder="Contoh: Penjualan produk ritel">
-                    </div>
-                    <div class="form-group">
-                        <label>Nominal Pemasukan (Rp)</label>
-                        <input type="number" id="in-masuk-nominal" class="form-control" placeholder="0">
-                    </div>
-                    <div class="form-group" style="display:flex; align-items:flex-end;">
-                        <button class="btn" onclick="simpanTransaksiPemasukan()">Simpan Transaksi</button>
-                    </div>
-                </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>No Transaksi</th>
+                    <th>Tanggal</th>
+                    <th>Unit Usaha</th>
+                    <th>Keterangan</th>
+                    <th class="text-right">Nominal</th>
+                    <th>Petugas</th>
+                    <th class="no-print">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="table-pemasukan-body"></tbody>
+        </table>
+    </div>
+</section>
 
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>No Transaksi</th>
-                                <th>Tanggal</th>
-                                <th>Unit Usaha</th>
-                                <th>Keterangan</th>
-                                <th class="text-right">Nominal</th>
-                                <th>Petugas</th>
-                                <th class="no-print">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-pemasukan-body"></tbody>
-                    </table>
-                </div>
-            </section>
+<section id="mod-inventaris" class="module-section">
+    <div class="section-header no-print">
+        <div class="section-title">📦 Manajemen Aset Tetap & Kalkulator Penyusutan</div>
+        <button onclick="tarikDataDariSheets()" class="btn" style="background-color: var(--success); width: auto;">🔄 Tarik Data Terbaru</button>
+    </div>
 
+    <div class="form-grid" style="margin-bottom: 2rem;">
+        <h3 style="grid-column: 1 / -1; color: var(--primary); margin-bottom: 5px;">➕ Registrasi Aset Tetap Baru</h3>
+        <form id="form-inventaris" onsubmit="simpanAsetBaru(event)" style="display: contents;">
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:0.875rem;">Nama Aset / Barang</label>
+                <input type="text" id="inv-nama" class="form-control" required>
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:0.875rem;">Tanggal Perolehan (Beli)</label>
+                <input type="date" id="inv-tanggal" class="form-control" required>
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:0.875rem;">Harga Perolehan (Rp)</label>
+                <input type="number" id="inv-harga" class="form-control" required min="1">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:0.875rem;">Umur Ekonomis (Bulan)</label>
+                <input type="number" id="inv-umur" class="form-control" required min="1" placeholder="Contoh: 48">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:0.875rem;">Nilai Sisa / Residu (Rp)</label>
+                <input type="number" id="inv-sisa" class="form-control" required min="0" value="0">
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+                <button type="submit" class="btn" style="width: 100%;">💾 Simpan Aset</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr>
+                    <th>ID Aset</th>
+                    <th>Nama Aset</th>
+                    <th>Tgl Perolehan</th>
+                    <th style="text-align: right;">Harga Perolehan</th>
+                    <th>Masa Pakai</th>
+                    <th style="text-align: right;">Penyusutan / Bln</th>
+                    <th style="text-align: right;">Akumulasi Penyusutan</th>
+                    <th style="text-align: right;">Nilai Buku Saat Ini</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-body-inventaris">
+                </tbody>
+        </table>
+    </div>
+</section>
             <section id="mod-pengeluaran" class="module-section">
                 <div class="section-header no-print">
                     <div class="section-title">Pencatatan Pengeluaran Beban</div>
@@ -826,15 +884,24 @@
         }
 
         function initApp() {
-            const todayStr = new Date().toISOString().split('T')[0];
-            if(document.getElementById('in-masuk-tanggal')) document.getElementById('in-masuk-tanggal').value = todayStr;
-            if(document.getElementById('in-keluar-tanggal')) document.getElementById('in-keluar-tanggal').value = todayStr;
-            
-            loadSelectOptions();
-            loadTables();
-            loadPengaturanForm();
-            updateDashboardMetrics();
-        }
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const currentMonthStr = today.toISOString().slice(0, 7); // Format: YYYY-MM
+    
+    // Set default tanggal form
+    if(document.getElementById('in-masuk-tanggal')) document.getElementById('in-masuk-tanggal').value = todayStr;
+    if(document.getElementById('in-keluar-tanggal')) document.getElementById('in-keluar-tanggal').value = todayStr;
+    
+    // PERBAIKAN: Set default filter bulan agar tabel tidak kosong saat aplikasi terbuka
+    if(document.getElementById('filter-pemasukan-bulan')) document.getElementById('filter-pemasukan-bulan').value = currentMonthStr;
+    if(document.getElementById('filter-pengeluaran-bulan')) document.getElementById('filter-pengeluaran-bulan').value = currentMonthStr;
+    if(document.getElementById('filter-laporan-bulan')) document.getElementById('filter-laporan-bulan').value = currentMonthStr;
+
+    loadSelectOptions();
+    loadTables();
+    loadPengaturanForm();
+    updateDashboardMetrics();
+}
 
         function handleLogin() {
             const u = document.getElementById('login-username').value;
@@ -874,22 +941,41 @@
             document.getElementById('app-screen').style.display = 'none';
         }
 
-        function switchModule(modName, element) {
-            document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-            document.querySelectorAll('.module-section').forEach(s => s.classList.remove('active'));
-            
-            element.classList.add('active');
-            document.getElementById(`mod-${modName}`).classList.add('active');
-            document.getElementById('topbar-title').innerText = element.innerText;
+        // 1. Fungsi Navigasi Menu Utama Aplikasi
+function switchModule(modId, element) {
+    // Sembunyikan semua section modul terlebih dahulu
+    document.querySelectorAll('.module-section').forEach(sec => {
+        sec.classList.remove('active');
+    });
+    
+    // Tampilkan modul yang dipilih secara presisi
+    const targetSec = document.getElementById('mod-' + modId);
+    if (targetSec) {
+        targetSec.classList.add('active');
+    }
 
-            if(modName === 'dashboard') {
-                updateDashboardMetrics();
-                renderCharts();
-            } else if(modName === 'laporan') {
-                generateLaporan();
-            }
-        }
+    // Kelola status aktif link navigasi di sidebar
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    if (element) element.classList.add('active');
 
+    // Perbarui judul bar atas secara dinamis
+    const titles = {
+        'dashboard': 'Dashboard Analisis',
+        'pemasukan': 'Pencatatan Pemasukan Kas',
+        'pengeluaran': 'Pencatatan Pengeluaran Beban',
+        'inventaris': '📦 Manajemen Aset Tetap & Kalkulator Penyusutan',
+        'laporan': 'Laporan Keuangan',
+        'pengaturan': 'Konfigurasi Profil & Manajerial'
+    };
+    document.getElementById('topbar-title').innerText = titles[modId] || 'Sistem Pembukuan';
+
+    // JIKA YANG DIKLIK ADALAH INVENTARIS, JALANKAN RE-RENDER TABELNYA
+    if (modId === 'inventaris') {
+        renderTabelInventaris();
+    }
+}
         function toggleDarkMode() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             document.documentElement.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
@@ -906,50 +992,63 @@
         }
 
         function loadTables() {
-            const filterBulanMasuk = document.getElementById('filter-pemasukan-bulan').value; 
-            const filterBulanKeluar = document.getElementById('filter-pengeluaran-bulan').value;
+    // Ambil value bulan filter, jika kosong otomatis arahkan ke bulan ini
+    const currentMonthStr = new Date().toISOString().slice(0, 7);
+    
+    const filterMasukEl = document.getElementById('filter-pemasukan-bulan');
+    const filterKeluarEl = document.getElementById('filter-pengeluaran-bulan');
+    
+    const bulanMasuk = filterMasukEl && filterMasukEl.value ? filterMasukEl.value : currentMonthStr;
+    const bulanKeluar = filterKeluarEl && filterKeluarEl.value ? filterKeluarEl.value : currentMonthStr;
 
-            let dataMasukFiltered = state.pemasukan.filter(m => m.tanggal.startsWith(filterBulanMasuk));
-            let dataKeluarFiltered = state.pengeluaran.filter(k => k.tanggal.startsWith(filterBulanKeluar));
+    // Saring data berdasarkan tahun-bulan (YYYY-MM)
+    let dataMasukFiltered = state.pemasukan.filter(m => m.tanggal && m.tanggal.startsWith(bulanMasuk));
+    let dataKeluarFiltered = state.pengeluaran.filter(k => k.tanggal && k.tanggal.startsWith(bulanKeluar));
 
-            const tMasuk = document.getElementById('table-pemasukan-body');
-            if(dataMasukFiltered.length === 0) {
-                tMasuk.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada entri data transaksi pada bulan ini.</td></tr>`;
-            } else {
-                tMasuk.innerHTML = dataMasukFiltered.map(m => `
-                    <tr>
-                        <td>${m.id}</td>
-                        <td>${m.tanggal}</td>
-                        <td><span class="font-bold">${m.unit}</span></td>
-                        <td>${m.keterangan}</td>
-                        <td class="text-right font-bold text-success">${formatRupiah(m.nominal)}</td>
-                        <td>${m.petugas}</td>
-                        <td class="no-print">
-                            <button class="btn-action btn-delete" ${currentUser && currentUser.role==='Viewer'?'disabled':''} onclick="hapusTransaksi('pemasukan', '${m.id}')">Hapus</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-
-            const tKeluar = document.getElementById('table-pengeluaran-body');
-            if(dataKeluarFiltered.length === 0) {
-                tKeluar.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada entri data transaksi pada bulan ini.</td></tr>`;
-            } else {
-                tKeluar.innerHTML = dataKeluarFiltered.map(k => `
-                    <tr>
-                        <td>${k.id}</td>
-                        <td>${k.tanggal}</td>
-                        <td><span class="font-bold">${k.kategori}</span></td>
-                        <td>${k.keterangan}</td>
-                        <td class="text-right font-bold text-danger">${formatRupiah(k.nominal)}</td>
-                        <td>${k.petugas}</td>
-                        <td class="no-print">
-                            <button class="btn-action btn-delete" ${currentUser && currentUser.role==='Viewer'?'disabled':''} onclick="hapusTransaksi('pengeluaran', '${k.id}')">Hapus</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
+    // Render Tabel Pemasukan
+    const tMasuk = document.getElementById('table-pemasukan-body');
+    if (tMasuk) {
+        if(dataMasukFiltered.length === 0) {
+            tMasuk.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada entri data transaksi pada bulan ini.</td></tr>`;
+        } else {
+            tMasuk.innerHTML = dataMasukFiltered.map(m => `
+                <tr>
+                    <td>${m.id || ''}</td>
+                    <td>${m.tanggal || ''}</td>
+                    <td><span class="font-bold">${m.unit || ''}</span></td>
+                    <td>${m.keterangan || ''}</td>
+                    <td class="text-right font-bold text-success">${formatRupiah(m.nominal)}</td>
+                    <td>${m.petugas || ''}</td>
+                    <td class="no-print">
+                        <button class="btn-action btn-delete" ${currentUser && currentUser.role==='Viewer'?'disabled':''} onclick="hapusTransaksi('pemasukan', '${m.id}')">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
         }
+    }
+
+    // Render Tabel Pengeluaran
+    const tKeluar = document.getElementById('table-pengeluaran-body');
+    if (tKeluar) {
+        if(dataKeluarFiltered.length === 0) {
+            tKeluar.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada entri data transaksi pada bulan ini.</td></tr>`;
+        } else {
+            tKeluar.innerHTML = dataKeluarFiltered.map(k => `
+                <tr>
+                    <td>${k.id || ''}</td>
+                    <td>${k.tanggal || ''}</td>
+                    <td><span class="font-bold">${k.kategori || ''}</span></td>
+                    <td>${k.keterangan || ''}</td>
+                    <td class="text-right font-bold text-danger">${formatRupiah(k.nominal)}</td>
+                    <td>${k.petugas || ''}</td>
+                    <td class="no-print">
+                        <button class="btn-action btn-delete" ${currentUser && currentUser.role==='Viewer'?'disabled':''} onclick="hapusTransaksi('pengeluaran', '${k.id}')">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+}
 
         async function simpanTransaksiPemasukan() {
             const tgl = document.getElementById('in-masuk-tanggal').value;
@@ -1467,69 +1566,206 @@
         }
 
         async function tarikDataDariSheets() {
-            const urlWebApp = state.gasUrl; 
-            if(!urlWebApp) return alert("Isi URL Google Apps Script Web App di menu Pengaturan terlebih dahulu.");
-            
-            try {
-                const btnSync = document.getElementById('menu-pemasukan').parentElement.querySelector("li[onclick*='tarikDataDariSheets']");
-                const originalText = btnSync.innerText;
-                btnSync.innerText = "⏳ Menghubungkan...";
-
-                const response = await fetch(`${urlWebApp}?action=readData`);
-                const hasil = await response.json();
-                
-                if (hasil.status === "success") {
-                    if(hasil.dataPemasukan) {
-                        state.pemasukan = hasil.dataPemasukan.map(m => ({
-                            id: m.id,
-                            tanggal: m.tanggal,
-                            unit: m.unit,
-                            keterangan: m.keterangan,
-                            nominal: parseFloat(m.nominal || m.jumlah || 0),
-                            petugas: m.petugas
-                        }));
-                    }
-                    if(hasil.dataPengeluaran) {
-                        state.pengeluaran = hasil.dataPengeluaran.map(k => ({
-                            id: k.id,
-                            tanggal: k.tanggal,
-                            kategori: k.kategori,
-                            keterangan: k.keterangan,
-                            nominal: parseFloat(k.nominal || k.jumlah || 0),
-                            petugas: k.petugas
-                        }));
-                    }
-                    
-                    // Ambil Data Inventaris dari Google Sheets
-                    if(hasil.dataInventaris) {
-                        state.dataInventaris = hasil.dataInventaris;
-                    }
-                    
-                    if(hasil.unitUsaha && hasil.unitUsaha.length > 0) state.unitUsaha = hasil.unitUsaha;
-                    if(hasil.kategoriKeluar && hasil.kategoriKeluar.length > 0) state.kategoriKeluar = hasil.kategoriKeluar;
-                    if(hasil.profil) state.profil = hasil.profil;
-                    if(hasil.ttd) state.ttd = hasil.ttd;
-                    
-                    saveStateToLocal();  
-
-                    loadSelectOptions();
-                    loadTables();
-                    loadPengaturanForm();
-                    updateDashboardMetrics();
-                    renderCharts();
-                    muatLogoSaatMulai();
-                    
-                    btnSync.innerText = originalText;
-                    alert("SINKRONISASI BERHASIL!\n\nSeluruh data transaksi dan data penyusutan inventaris berhasil diperbarui.");
-                } else {
-                    btnSync.innerText = originalText;
-                    alert("Gagal sinkronisasi: Respon server tidak sukses.");
-                }
-            } catch (error) { 
-                document.getElementById('menu-pemasukan').parentElement.querySelector("li[onclick*='tarikDataDariSheets']").innerText = "🔄 Tarik Data Sheets";
-                alert("Koneksi gagal: " + error); 
-            }
+    const btnSync = document.querySelector("li[onclick*='tarikDataDariSheets']") || document.querySelector("button[onclick*='tarikDataDariSheets']");
+    const originalText = btnSync ? btnSync.innerText : "🔄 Tarik Data Sheets";
+    if (btnSync) {
+        btnSync.innerText = "⏳ Sinkronisasi...";
+        btnSync.disabled = true;
+    }
+    
+    // Pastikan menggunakan variabel URL sesuai config aplikasi asli Anda (gasUrl atau urlWebapp)
+    const URL_GAS = state.gasUrl || state.urlWebapp; 
+    
+    if(!URL_GAS) {
+        alert("Peringatan: URL Web App GAS belum diatur di Pengaturan!");
+        if (btnSync) {
+            btnSync.innerText = originalText;
+            btnSync.disabled = false;
         }
+        return;
+    }
+
+    try {
+        // GET murni tanpa mode: "no-cors" agar data JSON bisa dibaca browser
+        const response = await fetch(URL_GAS, { method: "GET" });
+
+        if (!response.ok) {
+            throw new Error("Respons server bermasalah: " + response.statusText);
+        }
+
+        const hasil = await response.json();
+        console.log("Data Berhasil Diterima:", hasil);
+
+        if (hasil && hasil.status === "success") {
+            // 1. Masukkan data ke state asli Anda
+            if(hasil.dataPemasukan) state.pemasukan = hasil.dataPemasukan;
+            if(hasil.dataPengeluaran) state.pengeluaran = hasil.dataPengeluaran;
+            if(hasil.dataInventaris) state.dataInventaris = hasil.dataInventaris;
+            if(hasil.unitUsaha) state.unitUsaha = hasil.unitUsaha;
+            if(hasil.kategoriKeluar) state.kategoriKeluar = hasil.kategoriKeluar;
+            if(hasil.profil) state.profil = hasil.profil;
+            if(hasil.ttd) state.ttd = hasil.ttd;
+            
+            // Simpan ke local storage / cache aplikasi Anda
+            if(typeof saveStateToLocal === "function") saveStateToLocal(); 
+            else if(typeof simpanKeLocalStorage === "function") simpanKeLocalStorage();
+            // Pastikan baris ini ada di dalam blok sukses tarikDataDariSheets() Anda:
+loadSelectOptions();
+loadTables(); // <-- Ini memicu data pemasukan & pengeluaran dari cloud langsung muncul di tabel
+updateDashboardMetrics();
+if(typeof renderCharts === "function") renderCharts();
+if(typeof renderTabelInventaris === "function") renderTabelInventaris();
+
+            // 2. Jalankan fungsi render dengan proteksi anti-crash per fungsi
+            const jalankanRenderAman = (namaFungsi) => {
+                if (typeof window[namaFungsi] === "function") {
+                    try { window[namaFungsi](); } catch (e) { console.error(`Error di fungsi ${namaFungsi}:`, e); }
+                }
+            };
+
+            jalankanRenderAman('loadSelectOptions');
+            jalankanRenderAman('loadTables');
+            jalankanRenderAman('loadPengaturanForm');
+            jalankanRenderAman('updateDashboardMetrics');
+            jalankanRenderAman('renderCharts');
+            jalankanRenderAman('renderTabelInventaris'); // Fungsi inventaris dipanggil di sini
+            jalankanRenderAman('muatLogoSaatMulai');
+            
+            alert("SINKRONISASI BERHASIL!\n\nSeluruh data dari Google Sheets berhasil diperbarui.");
+        } else {
+            alert("Gagal sinkronisasi: " + (hasil.message || "Respon server tidak sukses."));
+        }
+    } catch (error) {
+        console.error("Detail Error:", error);
+        alert("Koneksi gagal atau terjadi masalah CORS.\n\nDetail: " + error.message);
+    } finally {
+        if (btnSync) {
+            btnSync.innerText = originalText;
+            btnSync.disabled = false;
+        }
+    }
+}
+ // =======================================================
+// MODUL TAMBAHAN: MANAJEMEN INVENTARIS & PENYUSUTAN ASET
+// =======================================================
+
+// FUNGSI UNTUK MENGHITUNG DAN MENAMPILKAN DATA INVENTARIS DI TABEL
+// 2. Fungsi Render Tabel Inventaris & Perhitungan Penyusutan Otomatis
+function renderTabelInventaris() {
+    // Deteksi ID kontainer tabel inventaris Anda (sesuaikan jika di html 1500 baris Anda namanya berbeda)
+    const tbody = document.getElementById('tabel-body-inventaris') || document.getElementById('tbody-inventaris');
+    if (!tbody) {
+        console.warn("Elemen tabel inventaris tidak ditemukan di HTML.");
+        return;
+    }
+
+    if (!state.dataInventaris || state.dataInventaris.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Tidak ada data aset inventaris. Silakan klik Tarik Data Sheets.</td></tr>`;
+        return;
+    }
+
+    // Ambil nilai filter bulan dari elemen laporan Anda
+    const filterBulanEl = document.getElementById('filter-laporan-bulan') || document.getElementById('filter-bulan');
+    const currentMonthStr = filterBulanEl ? filterBulanEl.value : new Date().toISOString().slice(0, 7);
+
+    tbody.innerHTML = state.dataInventaris.map(aset => {
+        const harga = parseFloat(aset.harga_perolehan) || 0;
+        const umur = parseInt(aset.umur_ekonomis_bulan) || 1;
+        const sisa = parseFloat(aset.nilai_sisa) || 0;
+        
+        // Perhitungan penyusutan metode garis lurus
+        const penyusutanPerBulan = (harga - sisa) / umur;
+
+        const tglBeli = new Date(aset.tanggal_beli);
+        const tglLaporan = new Date(currentMonthStr + "-28");
+        
+        let jumlahBulanPakai = 0;
+        if (!isNaN(tglBeli.getTime())) {
+            jumlahBulanPakai = (tglLaporan.getFullYear() - tglBeli.getFullYear()) * 12 + (tglLaporan.getMonth() - tglBeli.getMonth()) + 1;
+        }
+        if (jumlahBulanPakai < 0) jumlahBulanPakai = 0;
+        if (jumlahBulanPakai > umur) jumlahBulanPakai = umur;
+
+        const akumulasiPenyusutan = penyusutanPerBulan * jumlahBulanPakai;
+        const nilaiBuku = harga - akumulasiPenyusutan;
+
+        // Gunakan fungsi format rupiah bawaan aplikasi Anda jika namanya bukan formatRupiah
+        const formatUang = typeof formatRupiah === "function" ? formatRupiah : (num) => "Rp " + Number(num).toLocaleString('id-ID');
+
+        return `
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border);">${aset.id || ''}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); font-weight:600;">${aset.nama_aset || ''}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border);">${aset.tanggal_beli || ''}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); text-align:right;">${formatUang(harga)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); text-align:center;">${jumlahBulanPakai} / ${umur} Bln</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); text-align:right; color:var(--danger);">${formatUang(penyusutanPerBulan)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); text-align:right; color:var(--danger);">${formatUang(akumulasiPenyusutan)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); text-align:right; font-weight:700; color:var(--primary);">${formatUang(nilaiBuku)}</td>
+            </tr>
+        `;
+    }).join('');
+}
+// 3. Fungsi Simpan Tambah Aset Inventaris Baru ke Google Sheets via POST
+async function simpanAsetBaru(event) {
+    event.preventDefault();
+    
+    const payloadData = {
+        nama_aset: document.getElementById('inv-nama').value,
+        tanggal_beli: document.getElementById('inv-tanggal').value,
+        harga_perolehan: Number(document.getElementById('inv-harga').value),
+        umur_ekonomis_bulan: Number(document.getElementById('inv-umur').value),
+        nilai_sisa: Number(document.getElementById('inv-sisa').value)
+    };
+
+    if(!payloadData.nama_aset || !payloadData.tanggal_beli || !payloadData.harga_perolehan) {
+        alert("Mohon lengkapi data Nama, Tanggal, dan Harga Perolehan terlebih dahulu!");
+        return;
+    }
+
+    const btnSimpan = event.target.querySelector('button[type="submit"]');
+    const originalText = btnSimpan.innerText;
+    btnSimpan.innerText = "⏳ Menyimpan ke Sheets...";
+    btnSimpan.disabled = true;
+
+    try {
+        // Ambil URL Apps Script dari config terpusat aplikasi Anda
+        const URL_GAS = state.gasUrl; 
+
+        if(!URL_GAS) {
+            alert("URL Web App GAS belum diisi di Pengaturan!");
+            btnSimpan.disabled = false;
+            btnSimpan.innerText = originalText;
+            return;
+        }
+
+        await fetch(URL_GAS, {
+            method: "POST",
+            mode: "no-cors", // Mode aman Apps Script POST Redirects
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "add_inventaris",
+                data: payloadData
+            })
+        });
+
+        alert("BERHASIL!\nAset baru telah dicatat ke database Google Sheets.");
+        
+        // Reset Form Isian
+        document.getElementById('form-inventaris').reset();
+        document.getElementById('inv-sisa').value = "0";
+        
+        // Otomatis tarik ulang data dari cloud agar UI terupdate instan
+        await tarikDataDariSheets(); 
+        
+    } catch (error) {
+        console.error(error);
+        alert("Gagal menyimpan aset: " + error.message);
+    } finally {
+        btnSimpan.disabled = false;
+        btnSimpan.innerText = originalText;
+    }
+}
     </script>
 </body>
 </html>
