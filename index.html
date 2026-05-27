@@ -478,6 +478,24 @@
             .report-paper { box-shadow: none !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
             @page { size: A4; margin: 15mm 12mm; }
         }
+        
+   /* ... Kode-kode CSS lama Anda yang sudah ada sebelumnya ... */
+        /* ... Biarkan kode lama tetap berada di sini ... */
+
+        /* REVISI TAMBAHAN: Gaya Visual Badge untuk Tabel Bank Operasional */
+        .badge-mutasi {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: white;
+            display: inline-block;
+        }
+        .badge-Setor { background-color: #10b981; }      /* Hijau */
+        .badge-Bunga_Bank { background-color: #0d9488; }  /* Toska */
+        .badge-Tarik { background-color: #f59e0b; }       /* Orange */
+        .badge-Biaya_Admin { background-color: #ef4444; }  /* Merah */
+        .badge-default { background-color: #64748b; }      /* Kelabu */
+
     </style>
 </head>
 <body>
@@ -512,11 +530,13 @@
     <li class="sidebar-item" id="menu-pemasukan" onclick="switchModule('pemasukan', this)">Pemasukan</li>
     <li class="sidebar-item" id="menu-pengeluaran" onclick="switchModule('pengeluaran', this)">Pengeluaran</li>
     
+    <li class="sidebar-item" id="menu-bank" onclick="switchModule('bank-operasional', this)">🏦 Bank Operasional</li>
+    
     <li class="sidebar-item" id="menu-inventaris" onclick="switchModule('inventaris', this)">📦 Manajemen Inventaris</li>
     
     <li class="sidebar-item" onclick="switchModule('laporan', this)">Laporan Keuangan</li>
     <li class="sidebar-item" style="background-color: #28a745; color: white; font-weight: bold;" onclick="tarikDataDariSheets()">🔄 Tarik Data Sheets</li>
-    <li class="sidebar-item" id="menu-pengaturan" onclick="switchModule('pengaturan', this)">Pengaturan & Profil</li>
+    <li class="sidebar-item" id="menu-pengaturan" onclick="switchModule('pengaturan', this)">Pengaturan &amp; Profil</li>
 </ul>
 
             <div class="sidebar-footer">
@@ -719,6 +739,85 @@
                 </div>
             </section>
 
+            <section id="mod-bank-operasional" class="module-section" style="display:none;">
+    <div class="section-header no-print">
+        <div class="section-title">=== 🏦 Kas &amp; Bank Operasional BUMDes ===</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <label style="font-weight:600;">Periode Aktif:</label>
+            <input type="month" id="filter-bank-bulan" class="form-control" style="width:180px;">
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 5px solid var(--success); box-shadow: var(--shadow);">
+            <div style="font-size: 13px; font-weight:600; color: var(--text-muted); text-transform: uppercase; letter-spacing:0.5px;">Saldo Fisik Kas (Tunai)</div>
+            <div id="kas-tunai-display" style="font-size: 26px; font-weight: 700; color: var(--success); margin-top:5px;">Rp 0</div>
+        </div>
+        <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 5px solid var(--primary); box-shadow: var(--shadow);">
+            <div style="font-size: 13px; font-weight:600; color: var(--text-muted); text-transform: uppercase; letter-spacing:0.5px;">Saldo Rekening Bank</div>
+            <div id="kas-bank-display" style="font-size: 26px; font-weight: 700; color: var(--primary); margin-top:5px;">Rp 0</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+        <div style="background: var(--bg-card); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow);" class="no-print">
+            <h3 style="margin-top: 0; margin-bottom:15px; color: var(--primary); font-size:16px;">Form Input Mutasi Bank</h3>
+            
+            <form id="form-bank" onsubmit="handleAddBank(event)">
+                <div style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:500;">Tanggal Transaksi</label>
+                    <input type="date" id="bank-tanggal" class="form-control" required>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:500;">Jenis Mutasi</label>
+                    <select id="bank-jenis" class="form-control" style="padding:8px;" required>
+                        <option value="">-- Pilih Jenis --</option>
+                        <option value="Setor">Setor Tunai (Kas -> Bank)</option>
+                        <option value="Tarik">Tarik Tunai (Bank -> Kas)</option>
+                        <option value="Bunga_Bank">Bunga Bank</option>
+                        <option value="Biaya_Admin">Biaya Admin Bank</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:500;">Nominal Transaksi (Rp)</label>
+                    <input type="number" id="bank-nominal" class="form-control" placeholder="Contoh: 100000" required>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:500;">Keterangan / Uraian</label>
+                    <textarea id="bank-keterangan" class="form-control" rows="3" placeholder="Contoh: Cetak buku tabungan atau bunga bulanan" required></textarea>
+                </div>
+                <button type="submit" class="btn" style="width:100%; font-weight:600;">💾 Simpan Transaksi Bank</button>
+            </form>
+        </div>
+
+        <div class="table-container" style="margin-bottom:0;">
+            <div style="padding: 15px; background-color: var(--bg-card); border-bottom: 1px solid var(--border);">
+                <h3 style="margin: 0; color: var(--primary); font-size:16px;">Riwayat Rekening Koran Bank</h3>
+            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="padding: 12px 10px;">No</th>
+                        <th style="padding: 12px 10px;">Tanggal</th>
+                        <th style="padding: 12px 10px;">Jenis Transaksi</th>
+                        <th style="padding: 12px 10px;">Keterangan</th>
+                        <th style="padding: 12px 10px;" class="text-right">Nominal</th>
+                        <th style="padding: 12px 10px;" class="text-right">Saldo Kumulatif</th>
+                        <th style="padding: 12px 10px;">Petugas</th>
+                    </tr>
+                </thead>
+                <tbody id="table-bank-body">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                            Tidak ada records mutasi bank pada bulan ini. Silakan klik tombol Tarik Data Sheets.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
             <section id="mod-laporan" class="module-section">
                 <div class="section-header no-print" style="gap: 10px;">
                     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
@@ -837,6 +936,7 @@
         let state = {
             pemasukan: JSON.parse(localStorage.getItem('bumdes_pemasukan')) || [],
             pengeluaran: JSON.parse(localStorage.getItem('bumdes_pengeluaran')) || [],
+           dataBank: [],
             unitUsaha: JSON.parse(localStorage.getItem('bumdes_units')) || ["Simpan Pinjam", "Penyewaan", "Wisata Desa", "Grosir/Toko"],
             kategoriKeluar: JSON.parse(localStorage.getItem('bumdes_kategoris')) || ["Gaji", "Operasional", "ATK", "Perawatan", "Pembelian Stok/HPP"],
             dataInventaris: [], // Penampung data dari tab inventaris Sheets
@@ -858,20 +958,93 @@
             gasUrl: localStorage.getItem('bumdes_gas_url') || ""
         };
 
+
         let currentUser = null;
         let chart1 = null;
         let chart2 = null;
 
-        window.onload = function() {
-            const currentMonthStr = new Date().toISOString().slice(0, 7); 
-            document.getElementById('filter-pemasukan-bulan').value = currentMonthStr;
-            document.getElementById('filter-pengeluaran-bulan').value = currentMonthStr;
-            document.getElementById('filter-laporan-bulan').value = currentMonthStr;
+        function getSaldoAwalPeriode(bulanAktif) {
 
-            muatLogoSaatMulai();
-            initApp();
-            document.getElementById('current-date-time').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    let saldoAwal = Number(
+        state.profil &&
+        state.profil.saldoAwalMurni || 0
+    );
+
+    if (!state.historyTutupBuku) {
+        return saldoAwal;
+    }
+
+    const semuaPeriode =
+        Object.keys(state.historyTutupBuku).sort();
+
+    semuaPeriode.forEach(function(periode) {
+
+        if (periode < bulanAktif) {
+
+            const data =
+                state.historyTutupBuku[periode];
+
+            if (
+                data &&
+                data.saldoAkhirDitutup != null
+            ) {
+
+                saldoAwal =
+                    Number(data.saldoAkhirDitutup);
+            }
+        }
+    });
+
+    return saldoAwal;
+}
+
+        window.onload = function() {
+    const currentMonthStr = new Date().toISOString().slice(0, 7); 
+    
+    // 1. Sinkronisasi filter bulan pemasukan bawaan asli
+    if (document.getElementById('filter-pemasukan-bulan')) {
+        document.getElementById('filter-pemasukan-bulan').value = currentMonthStr;
+    }
+    
+    // 2. Sinkronisasi filter bulan pengeluaran bawaan asli
+    if (document.getElementById('filter-pengeluaran-bulan')) {
+        document.getElementById('filter-pengeluaran-bulan').value = currentMonthStr;
+    }
+    
+    // 3. KOREKSI: Menggunakan ID 'filter-bulan-laporan' sesuai file HTML asli Anda
+    if (document.getElementById('filter-bulan-laporan')) {
+        document.getElementById('filter-bulan-laporan').value = currentMonthStr;
+    }
+    
+    // 4. Sinkronisasi filter bulan modul bank operasional yang baru
+    // REVISI SINKRONISASI FILTER KALENDER BANK OPERASIONAL:
+    if (document.getElementById('filter-bank-bulan')) {
+        // 1. Set nilai default kalender ke bulan berjalan saat ini
+        document.getElementById('filter-bank-bulan').value = currentMonthStr;
+        
+        // 2. TAMBAHAN UTAMA: Pasang pemicu otomatis ketika user mengubah bulan di kalender bank
+        document.getElementById('filter-bank-bulan').onchange = function() {
+            if (typeof loadTables === "function") {
+                loadTables(); // Menjalankan fungsi penyaringan data bank secara instan
+            }
         };
+    }
+
+    // Menjalankan fungsi kelanjutan sistem bawaan Anda
+    muatLogoSaatMulai();
+    initApp();
+    
+    // Menampilkan format penulisan tanggal hari ini pada header aplikasi
+    if (document.getElementById('current-date-time')) {
+        document.getElementById('current-date-time').innerText = new Date().toLocaleDateString('id-ID', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    }
+};
+
 
         function saveStateToLocal() {
             localStorage.setItem('bumdes_pemasukan', JSON.stringify(state.pemasukan));
@@ -904,36 +1077,43 @@
 }
 
         function handleLogin() {
-            const u = document.getElementById('login-username').value;
-            const p = document.getElementById('login-password').value;
-            const err = document.getElementById('login-error');
+    const u = document.getElementById('login-username').value;
+    const p = document.getElementById('login-password').value;
+    const err = document.getElementById('login-error');
 
-            if((u === "admin" && p === "admin123") || (u === "operator" && p === "op123") || (u === "viewer" && p === "view123")) {
-                currentUser = {
-                    username: u,
-                    role: u === "admin" ? "Admin" : (u === "operator" ? "Operator" : "Viewer"),
-                    nama: u === "admin" ? state.ttd.nama1 : (u === "operator" ? "Petugas Lapangan" : "Otoritas Pemeriksa")
-                };
-                
-                document.getElementById('user-display-name').innerText = currentUser.nama;
-                document.getElementById('user-display-role').innerText = currentUser.role;
-                
-                if(currentUser.role === "Viewer") {
-                    document.getElementById('form-pemasukan-container').style.display = 'none';
-                    document.getElementById('form-pengeluaran-container').style.display = 'none';
-                    document.getElementById('menu-pengaturan').style.display = 'none';
-                } else if(currentUser.role === "Operator") {
-                    document.getElementById('menu-pengaturan').style.display = 'none';
-                }
-
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-screen').style.display = 'flex';
-                
-                setTimeout(renderCharts, 200);
-            } else {
-                err.innerText = "Kombinasi kredensial login salah.";
-            }
+    // 1. Validasi akun lokal sesuai baris kode asli di file Anda
+    if((u === "admin" && p === "admin123") || (u === "operator" && p === "op123") || (u === "viewer" && p === "view123")) {
+        currentUser = {
+            username: u,
+            role: u === "admin" ? "Admin" : (u === "operator" ? "Operator" : "Viewer"),
+            // Proteksi aman agar tidak crash jika data ttd dari sheets belum ditarik
+            nama: u === "admin" ? (state.ttd ? state.ttd.nama1 : "Administrator") : (u === "operator" ? "Petugas Lapangan" : "Otoritas Pemeriksa")
+        };
+        
+        document.getElementById('user-display-name').innerText = currentUser.nama;
+        document.getElementById('user-display-role').innerText = currentUser.role;
+        
+        // 2. Pembatasan Menu Berdasarkan Role (Sesuai file asli Anda)
+        if(currentUser.role === "Viewer") {
+            if(document.getElementById('form-pemasukan-container')) document.getElementById('form-pemasukan-container').style.display = 'none';
+            if(document.getElementById('form-pengeluaran-container')) document.getElementById('form-pengeluaran-container').style.display = 'none';
+            if(document.getElementById('menu-pengaturan')) document.getElementById('menu-pengaturan').style.display = 'none';
+        } else if(currentUser.role === "Operator") {
+            if(document.getElementById('menu-pengaturan')) document.getElementById('menu-pengaturan').style.display = 'none';
         }
+
+        // 3. Sembunyikan layar login
+        document.getElementById('login-screen').style.display = 'none';
+        
+        // 4. KOREKSI TOTAL: Ubah ke 'grid' agar layout utama muncul dengan struktur yang benar
+        document.getElementById('app-screen').style.display = 'grid'; 
+        
+        // Render grafik bawaan Anda
+        setTimeout(renderCharts, 200);
+    } else {
+        err.innerText = "Kombinasi kredensial login salah.";
+    }
+}
 
         function handleLogout() {
             currentUser = null;
@@ -942,38 +1122,38 @@
         }
 
         // 1. Fungsi Navigasi Menu Utama Aplikasi
-function switchModule(modId, element) {
-    // Sembunyikan semua section modul terlebih dahulu
+function switchModule(moduleId, element) {
+    // 1. Sembunyikan semua halaman module
     document.querySelectorAll('.module-section').forEach(sec => {
+        sec.style.display = 'none';
         sec.classList.remove('active');
     });
+
+    // 2. Tampilkan module yang dipilih berdasarkan ID-nya
+    const targetId = moduleId === 'bank-operasional' ? 'mod-bank-operasional' : 'mod-' + moduleId;
+    const targetSection = document.getElementById(targetId);
     
-    // Tampilkan modul yang dipilih secara presisi
-    const targetSec = document.getElementById('mod-' + modId);
-    if (targetSec) {
-        targetSec.classList.add('active');
+    if (targetSection) {
+        targetSection.style.display = 'block';
+        targetSection.classList.add('active');
+        
+        // Perbarui judul di bar atas aplikasi
+        const topbarTitle = document.getElementById('topbar-title');
+        if (topbarTitle) {
+            if (moduleId === 'bank-operasional') topbarTitle.innerText = "Kas & Bank Operasional";
+            else topbarTitle.innerText = moduleId.charAt(0).toUpperCase() + moduleId.slice(1) + " Analisis";
+        }
     }
 
-    // Kelola status aktif link navigasi di sidebar
-    document.querySelectorAll('.sidebar-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    if (element) element.classList.add('active');
+    // 3. Ubah status warna menu di sidebar agar kelihatan aktif
+    if (element) {
+        document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+    }
 
-    // Perbarui judul bar atas secara dinamis
-    const titles = {
-        'dashboard': 'Dashboard Analisis',
-        'pemasukan': 'Pencatatan Pemasukan Kas',
-        'pengeluaran': 'Pencatatan Pengeluaran Beban',
-        'inventaris': '📦 Manajemen Aset Tetap & Kalkulator Penyusutan',
-        'laporan': 'Laporan Keuangan',
-        'pengaturan': 'Konfigurasi Profil & Manajerial'
-    };
-    document.getElementById('topbar-title').innerText = titles[modId] || 'Sistem Pembukuan';
-
-    // JIKA YANG DIKLIK ADALAH INVENTARIS, JALANKAN RE-RENDER TABELNYA
-    if (modId === 'inventaris') {
-        renderTabelInventaris();
+    // 4. Otomatis muat ulang tabel agar data langsung muncul
+    if (typeof loadTables === "function") {
+        loadTables();
     }
 }
         function toggleDarkMode() {
@@ -992,20 +1172,30 @@ function switchModule(modId, element) {
         }
 
         function loadTables() {
-    // Ambil value bulan filter, jika kosong otomatis arahkan ke bulan ini
+    // Ambil value bulan filter, jika kosong otomatis arahkan ke bulan ini (YYYY-MM)
     const currentMonthStr = new Date().toISOString().slice(0, 7);
     
     const filterMasukEl = document.getElementById('filter-pemasukan-bulan');
     const filterKeluarEl = document.getElementById('filter-pengeluaran-bulan');
+    const filterBankEl = document.getElementById('filter-bank-bulan'); 
     
     const bulanMasuk = filterMasukEl && filterMasukEl.value ? filterMasukEl.value : currentMonthStr;
     const bulanKeluar = filterKeluarEl && filterKeluarEl.value ? filterKeluarEl.value : currentMonthStr;
+    const bulanBank = filterBankEl && filterBankEl.value ? filterBankEl.value : currentMonthStr; 
 
     // Saring data berdasarkan tahun-bulan (YYYY-MM)
     let dataMasukFiltered = state.pemasukan.filter(m => m.tanggal && m.tanggal.startsWith(bulanMasuk));
     let dataKeluarFiltered = state.pengeluaran.filter(k => k.tanggal && k.tanggal.startsWith(bulanKeluar));
+    
+    // Pastikan array bank aman dari error undefined sebelum di-filter
+    const listBank = state.dataBank || [];
+    
+    // SINKRONISASI SALDO URUT KRONOLOGIS: Urutkan data bank dari tanggal terlama ke terbaru untuk perhitungan saldo riil
+    const dataBankSortedKronologis = [...listBank].sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
-    // Render Tabel Pemasukan
+    // ==========================================
+    // 1. RENDER TABEL PEMASUKAN (Bawaan Asli)
+    // ==========================================
     const tMasuk = document.getElementById('table-pemasukan-body');
     if (tMasuk) {
         if(dataMasukFiltered.length === 0) {
@@ -1027,7 +1217,9 @@ function switchModule(modId, element) {
         }
     }
 
-    // Render Tabel Pengeluaran
+    // ==========================================
+    // 2. RENDER TABEL PENGELUARAN (Bawaan Asli)
+    // ==========================================
     const tKeluar = document.getElementById('table-pengeluaran-body');
     if (tKeluar) {
         if(dataKeluarFiltered.length === 0) {
@@ -1047,6 +1239,68 @@ function switchModule(modId, element) {
                 </tr>
             `).join('');
         }
+    }
+
+    // ==========================================
+    // 3. REVISI SINKRONISASI: RENDER TABEL MUTASI BANK OPERASIONAL
+    // ==========================================
+    // KOREKSI UTAMA: Menggunakan ID 'table-bank-body' dan 'tbody-bank' (Proteksi Ganda agar tidak salah sasaran)
+    const tBank = document.getElementById('table-bank-body') || document.getElementById('tbody-bank');
+    if (tBank) {
+        let saldoKumulatifBerjalan = 0;
+        let htmlBarisBank = "";
+        let counterBaris = 1;
+
+        dataBankSortedKronologis.forEach(b => {
+            const nominal = Number(b.nominal || 0);
+            
+            // Hitung dampak transaksi terhadap saldo internal bank
+            if (b.jenis_mutasi === "Setor" || b.jenis_mutasi === "Bunga_Bank") {
+                saldoKumulatifBerjalan += nominal;
+            } else if (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") {
+                saldoKumulatifBerjalan -= nominal;
+            }
+
+            // Saring: Hanya tampilkan data yang bulannya sesuai dengan filter bulan bank saat ini
+            if (b.tanggal && b.tanggal.startsWith(bulanBank)) {
+                let classWarnaNominal = "text-success";
+                let penandaSimbol = "+ ";
+                
+                if (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") {
+                    classWarnaNominal = "text-danger";
+                    penandaSimbol = "- ";
+                }
+
+                const namaBadge = String(b.jenis_mutasi || '').replace('_', ' ');
+
+                htmlBarisBank += `
+                    <tr>
+                        <td>${counterBaris}</td>
+                        <td>${b.tanggal || ''}</td>
+                        <td><span class="badge-mutasi badge-${b.jenis_mutasi || 'default'} font-bold">${namaBadge}</span></td>
+                        <td>${b.keterangan || ''}</td>
+                        <td class="text-right font-bold ${classWarnaNominal}">${penandaSimbol}${formatRupiah(nominal)}</td>
+                        <td class="text-right font-bold" style="color: var(--primary);">${formatRupiah(saldoKumulatifBerjalan)}</td>
+                        <td>${b.petugas || 'Admin'}</td>
+                    </tr>
+                `;
+                counterBaris++;
+            }
+        });
+
+        if (htmlBarisBank === "") {
+            tBank.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted); padding:15px;">Tidak ada riwayat mutasi bank pada bulan ${bulanBank}.</td></tr>`;
+        } else {
+            tBank.innerHTML = htmlBarisBank;
+        }
+    }
+
+    // ==========================================
+    // 4. KESINAMBUNGAN SAKTI: AKTIFKAN MODUL INVENTARIS
+    // ==========================================
+    // Menjamin setiap fungsi tarikData/initApp berjalan, tabel inventaris ikut dimutakhirkan datanya
+    if (typeof renderTabelInventaris === "function") {
+        renderTabelInventaris();
     }
 }
 
@@ -1122,6 +1376,52 @@ function switchModule(modId, element) {
             document.getElementById('in-keluar-keterangan').value = "";
             document.getElementById('in-keluar-nominal').value = "";
         }
+async function simpanMutasiBank() {
+    const tgl = document.getElementById('in-bank-tanggal').value;
+    const jenis = document.getElementById('in-bank-jenis').value;
+    const ket = document.getElementById('in-bank-keterangan').value;
+    const nom = parseFloat(document.getElementById('in-bank-nominal').value);
+
+    // Validasi input wajib
+    if (!tgl || !jenis || !ket || isNaN(nom)) {
+        return alert("Lengkapi seluruh data formulir Bank!");
+    }
+
+    // Proteksi Tutup Buku Bulanan
+    const targetBulan = tgl.slice(0, 7);
+    if (state.historyTutupBuku[targetBulan] && state.historyTutupBuku[targetBulan].isClosed) {
+        alert(`Transaksi Ditolak! Periode Buku [${targetBulan}] telah dikunci oleh Manajemen.`);
+        return;
+    }
+
+    // Susun objek data bank baru sesuai struktur kolom database
+    const newMutasi = {
+        id: "TRX-B" + new Date().getTime().toString().slice(-5),
+        tanggal: tgl,
+        jenis_mutasi: jenis,
+        keterangan: ket,
+        nominal: nom,
+        petugas: currentUser ? currentUser.nama : "System"
+    };
+
+    // Masukkan ke array lokal (di urutan paling atas)
+    state.dataBank.unshift(newMutasi);
+    saveStateToLocal();
+    
+    // Render ulang UI Tabel & Dashboard
+    loadTables();
+    updateDashboardMetrics();
+
+    // Kirim data secara real-time ke Google Sheet Cloud
+    if (state.gasUrl) {
+        await syncToGasBackend('add_bank', newMutasi);
+    }
+
+    // Bersihkan kembali form input
+    document.getElementById('in-bank-keterangan').value = "";
+    document.getElementById('in-bank-nominal').value = "";
+    alert("Data mutasi bank berhasil disimpan!");
+}
 
         function hapusTransaksi(type, id) {
             const item = state[type].find(x => x.id === id);
@@ -1140,21 +1440,171 @@ function switchModule(modId, element) {
             updateDashboardMetrics();
         }
 
-        function updateDashboardMetrics() {
-            const todayStr = new Date().toISOString().split('T')[0];
-            
-            let masukHariIni = state.pemasukan.filter(m => m.tanggal === todayStr).reduce((acc, curr) => acc + curr.nominal, 0);
-            let keluarHariIni = state.pengeluaran.filter(k => k.tanggal === todayStr).reduce((acc, curr) => acc + curr.nominal, 0);
-            
-            let totalMasuk = state.pemasukan.reduce((acc, curr) => acc + curr.nominal, 0);
-            let totalKeluar = state.pengeluaran.reduce((acc, curr) => acc + curr.nominal, 0);
-            let kasAktifSaatIni = (parseFloat(state.profil.saldoAwalMurni) || 0) + totalMasuk - totalKeluar;
+        
+function updateDashboardMetrics() {
 
-            document.getElementById('stat-masuk-hari-ini').innerText = formatRupiah(masukHariIni);
-            document.getElementById('stat-keluar-hari-ini').innerText = formatRupiah(keluarHariIni);
-            document.getElementById('stat-laba-bersih').innerText = formatRupiah(kasAktifSaatIni);
+    try {
+
+        const bulanAktif =
+            new Date().toISOString().slice(0, 7);
+
+        const saldoAwalSistem =
+            getSaldoAwalPeriode(bulanAktif);
+
+
+        const totalMasuk = state.pemasukan
+            .filter(function(item) {
+
+                if (!item || !item.tanggal) {
+                    return false;
+                }
+
+                return String(item.tanggal)
+                    .startsWith(bulanAktif);
+
+            })
+            .reduce(function(sum, item) {
+
+                return sum +
+                    Number(item.nominal || 0);
+
+            }, 0);
+
+
+        const totalKeluar = state.pengeluaran
+            .filter(function(item) {
+
+                if (!item || !item.tanggal) {
+                    return false;
+                }
+
+                return String(item.tanggal)
+                    .startsWith(bulanAktif);
+
+            })
+            .reduce(function(sum, item) {
+
+                return sum +
+                    Number(item.nominal || 0);
+
+            }, 0);
+
+
+        const kasTunai =
+            saldoAwalSistem
+            + totalMasuk
+            - totalKeluar;
+
+
+        let kasBank = 0;
+
+        if (
+            state.dataBank &&
+            state.dataBank.length > 0
+        ) {
+
+            state.dataBank.forEach(function(mutasi) {
+
+                const tipe =
+                    mutasi.jenis_mutasi;
+
+                const nilai =
+                    Number(mutasi.nominal || 0);
+
+                if (
+                    tipe === 'Setor' ||
+                    tipe === 'Bunga_Bank'
+                ) {
+
+                    kasBank += nilai;
+
+                } else if (
+                    tipe === 'Tarik' ||
+                    tipe === 'Biaya_Admin'
+                ) {
+
+                    kasBank -= nilai;
+                }
+            });
         }
 
+
+        const totalKeuanganAktif =
+            kasTunai + kasBank;
+
+
+        if (
+            document.getElementById(
+                'stat-masuk-hari-ini'
+            )
+        ) {
+
+            document.getElementById(
+                'stat-masuk-hari-ini'
+            ).innerText =
+                formatRupiah(totalMasuk);
+        }
+
+
+        if (
+            document.getElementById(
+                'stat-keluar-hari-ini'
+            )
+        ) {
+
+            document.getElementById(
+                'stat-keluar-hari-ini'
+            ).innerText =
+                formatRupiah(totalKeluar);
+        }
+
+
+        if (
+            document.getElementById(
+                'stat-laba-bersih'
+            )
+        ) {
+
+            document.getElementById(
+                'stat-laba-bersih'
+            ).innerText =
+                formatRupiah(totalKeuanganAktif);
+        }
+
+
+        if (
+            document.getElementById(
+                'kas-tunai-display'
+            )
+        ) {
+
+            document.getElementById(
+                'kas-tunai-display'
+            ).innerText =
+                formatRupiah(kasTunai);
+        }
+
+
+        if (
+            document.getElementById(
+                'kas-bank-display'
+            )
+        ) {
+
+            document.getElementById(
+                'kas-bank-display'
+            ).innerText =
+                formatRupiah(kasBank);
+        }
+
+    } catch(err) {
+
+        console.error(
+            'ERROR updateDashboardMetrics:',
+            err
+        );
+    }
+}
         function renderCharts() {
             const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
             let monthlyIn = Array(12).fill(0);
@@ -1544,17 +1994,30 @@ function switchModule(modId, element) {
     
     let gasAction = action;
     
-    // Pemetaan transaksi
+    // Pemetaan aksi transaksi biasa
     if (action === 'tambahPemasukan') gasAction = "add_pemasukan";
     if (action === 'tambahPengeluaran') gasAction = "add_pengeluaran";
     
-    // Pemetaan pengaturan (Pastikan ini ada!)
+    // Pemetaan aksi untuk Bank Operasional, Profil, & TTD
+    if (action === 'add_bank') gasAction = "add_bank";
     if (action === 'save_profil') gasAction = "save_profil";
     if (action === 'save_ttd') gasAction = "save_ttd";
 
     let payloadData = data;
-    // ... (Logika penyusunan payloadData transaksi Anda sebelumnya) ...
-
+    
+    // Jika transaksi pembukuan standar, bungkus ulang strukturnya
+    if (action === 'tambahPemasukan' || action === 'tambahPengeluaran') {
+        payloadData = {
+            id: data.id,
+            tanggal: data.tanggal,
+            unit: data.unit || "",
+            kategori: data.kategori || "",
+            keterangan: data.keterangan,
+            nominal: data.nominal,
+            petugas: currentUser ? currentUser.nama : "Admin" 
+        };
+    }
+    
     try {
         await fetch(state.gasUrl, {
             method: "POST",
@@ -1562,99 +2025,76 @@ function switchModule(modId, element) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: gasAction, data: payloadData })
         });
-        console.log("Sinkronisasi pengaturan berhasil:", gasAction);
+        console.log("Sinkronisasi otomatis cloud sukses:", gasAction);
     } catch (error) {
-        console.error("Gagal sinkronisasi:", error);
+        console.error("Gagal sinkronisasi otomatis ke cloud: ", error);
     }
 }       
-        async function tarikDataDariSheets() {
-    const btnSync = document.querySelector("li[onclick*='tarikDataDariSheets']") || document.querySelector("button[onclick*='tarikDataDariSheets']");
-    const originalText = btnSync ? btnSync.innerText : "🔄 Tarik Data Sheets";
-    if (btnSync) {
-        btnSync.innerText = "⏳ Sinkronisasi...";
-        btnSync.disabled = true;
-    }
-    
-    // Pastikan menggunakan variabel URL sesuai config aplikasi asli Anda (gasUrl atau urlWebapp)
-    const URL_GAS = state.gasUrl || state.urlWebapp; 
-    
-    if(!URL_GAS) {
-        alert("Peringatan: URL Web App GAS belum diatur di Pengaturan!");
-        if (btnSync) {
-            btnSync.innerText = originalText;
-            btnSync.disabled = false;
-        }
+      async function tarikDataDariSheets() {
+    const URL_GAS = state.gasUrl;
+    // Jika URL kosong atau masih bawaan template, ingatkan user
+    if(!URL_GAS || URL_GAS.includes("script.google.com/macros/s/...")) {
+        alert("⚠️ Gagal Menarik Data:\nURL Web App Google Apps Script belum dikonfigurasi di menu Pengaturan!");
         return;
     }
 
+    // Cari tombol sinkronisasi di navbar untuk memberikan efek loading
+    const btnNav = document.querySelector('li[onclick="tarikDataDariSheets()"]');
+    const txtAsli = btnNav ? btnNav.innerHTML : "";
+    if(btnNav) btnNav.innerHTML = "⏳ Menarik Data...";
+
     try {
-        // GET murni tanpa mode: "no-cors" agar data JSON bisa dibaca browser
-        const response = await fetch(URL_GAS, { method: "GET" });
+        // Melakukan request ke Google Apps Script doGet dengan parameter getdata=true
+        const response = await fetch(URL_GAS + "?getdata=true", {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit"
+        });
 
-        if (!response.ok) {
-            throw new Error("Respons server bermasalah: " + response.statusText);
-        }
+        if (!response.ok) throw new Error("Respon server Google tidak sukses.");
 
-        const hasil = await response.json();
-        console.log("Data Berhasil Diterima:", hasil);
-
-        if (hasil && hasil.status === "success") {
-            // 1. Masukkan data ke state asli Anda
-            if(hasil.dataPemasukan) state.pemasukan = hasil.dataPemasukan;
-            if(hasil.dataPengeluaran) state.pengeluaran = hasil.dataPengeluaran;
-            if(hasil.dataInventaris) state.dataInventaris = hasil.dataInventaris;
-            if(hasil.unitUsaha) state.unitUsaha = hasil.unitUsaha;
-            if(hasil.kategoriKeluar) state.kategoriKeluar = hasil.kategoriKeluar;
-            if(hasil.profil) state.profil = hasil.profil;
-            if(hasil.ttd) state.ttd = hasil.ttd;
+        const res = await response.json();
+        
+        if(res.status === "success") {
+            // 1. Masukkan data dari cloud Sheets ke dalam RAM/State aplikasi lokal HTML
+            state.pemasukan = res.dataPemasukan || [];
+            state.pengeluaran = res.dataPengeluaran || [];
+            state.dataBank = res.dataBank || []; 
             
-            // Simpan ke local storage / cache aplikasi Anda
-            if(typeof saveStateToLocal === "function") saveStateToLocal(); 
-            else if(typeof simpanKeLocalStorage === "function") simpanKeLocalStorage();
-            // Pastikan baris ini ada di dalam blok sukses tarikDataDariSheets() Anda:
-loadSelectOptions();
-loadTables(); // <-- Ini memicu data pemasukan & pengeluaran dari cloud langsung muncul di tabel
-updateDashboardMetrics();
-if(typeof renderCharts === "function") renderCharts();
-if(typeof renderTabelInventaris === "function") renderTabelInventaris();
-
-            // 2. Jalankan fungsi render dengan proteksi anti-crash per fungsi
-            const jalankanRenderAman = (namaFungsi) => {
-                if (typeof window[namaFungsi] === "function") {
-                    try { window[namaFungsi](); } catch (e) { console.error(`Error di fungsi ${namaFungsi}:`, e); }
-                }
-            };
-
-            jalankanRenderAman('loadSelectOptions');
-            jalankanRenderAman('loadTables');
-            jalankanRenderAman('loadPengaturanForm');
-            jalankanRenderAman('updateDashboardMetrics');
-            jalankanRenderAman('renderCharts');
-            jalankanRenderAman('renderTabelInventaris'); // Fungsi inventaris dipanggil di sini
-            jalankanRenderAman('muatLogoSaatMulai');
+            // KOREKSI 1: state.inventaris disamakan menjadi state.dataInventaris
+            state.dataInventaris = res.dataInventaris || [];
             
-            alert("SINKRONISASI BERHASIL!\n\nSeluruh data dari Google Sheets berhasil diperbarui.");
+            // 2. Simpan cadangan data terbaru ke memori penyimpanan fisik browser
+            saveStateToLocal();
+            
+            // 3. Render ulang semua tabel, dashboard, dan grafik secara instan
+            loadTables();
+            updateDashboardMetrics();
+            if(typeof renderCharts === "function") renderCharts();
+            
+            // KOREKSI 2: Eksekusi fungsi gambar tabel inventaris di sini
+            if(typeof renderTabelInventaris === "function") renderTabelInventaris();
+            
+            alert("✅ BERHASIL!\nData keuangan BUMDes terbaru berhasil disinkronkan dari Google Sheets.");
         } else {
-            alert("Gagal sinkronisasi: " + (hasil.message || "Respon server tidak sukses."));
+            alert("❌ Gagal memuat data dari cloud: " + (res.message || "Format respon salah"));
         }
-    } catch (error) {
-        console.error("Detail Error:", error);
-        alert("Koneksi gagal atau terjadi masalah CORS.\n\nDetail: " + error.message);
+    } catch(err) {
+        console.error("Error Fetch Data:", err);
+        alert("❌ Koneksi Gagal:\nTidak dapat terhubung ke Google Sheets Cloud. Periksa apakah URL Web App GAS Anda sudah benar dan sudah di-deploy ulang sebagai 'Anyone'.\n\nDetail Error: " + err.toString());
     } finally {
-        if (btnSync) {
-            btnSync.innerText = originalText;
-            btnSync.disabled = false;
-        }
+        if(btnNav) btnNav.innerHTML = txtAsli;
     }
 }
- // =======================================================
+
+// =======================================================
 // MODUL TAMBAHAN: MANAJEMEN INVENTARIS & PENYUSUTAN ASET
 // =======================================================
 
 // FUNGSI UNTUK MENGHITUNG DAN MENAMPILKAN DATA INVENTARIS DI TABEL
 // 2. Fungsi Render Tabel Inventaris & Perhitungan Penyusutan Otomatis
 function renderTabelInventaris() {
-    // Deteksi ID kontainer tabel inventaris Anda (sesuaikan jika di html 1500 baris Anda namanya berbeda)
+    // Deteksi ID kontainer tabel inventaris Anda
     const tbody = document.getElementById('tabel-body-inventaris') || document.getElementById('tbody-inventaris');
     if (!tbody) {
         console.warn("Elemen tabel inventaris tidak ditemukan di HTML.");
@@ -1666,8 +2106,8 @@ function renderTabelInventaris() {
         return;
     }
 
-    // Ambil nilai filter bulan dari elemen laporan Anda
-    const filterBulanEl = document.getElementById('filter-laporan-bulan') || document.getElementById('filter-bulan');
+    // KOREKSI 3: Penyelarasan ID Elemen Filter Laporan Bulan yang asli
+    const filterBulanEl = document.getElementById('filter-bulan-laporan') || document.getElementById('filter-laporan-bulan') || document.getElementById('filter-bulan');
     const currentMonthStr = filterBulanEl ? filterBulanEl.value : new Date().toISOString().slice(0, 7);
 
     tbody.innerHTML = state.dataInventaris.map(aset => {
@@ -1691,9 +2131,10 @@ function renderTabelInventaris() {
         const akumulasiPenyusutan = penyusutanPerBulan * jumlahBulanPakai;
         const nilaiBuku = harga - akumulasiPenyusutan;
 
-        // Gunakan fungsi format rupiah bawaan aplikasi Anda jika namanya bukan formatRupiah
         const formatUang = typeof formatRupiah === "function" ? formatRupiah : (num) => "Rp " + Number(num).toLocaleString('id-ID');
 
+    // ambil semua periode tutup buku
+    
         return `
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid var(--border);">${aset.id || ''}</td>
@@ -1767,6 +2208,98 @@ async function simpanAsetBaru(event) {
         btnSimpan.disabled = false;
         btnSimpan.innerText = originalText;
     }
+}
+async function handleAddBank(event) {
+    event.preventDefault();
+    
+    const tanggal = document.getElementById('bank-tanggal').value;
+    const jenis_mutasi = document.getElementById('bank-jenis').value;
+    const nominal = document.getElementById('bank-nominal').value;
+    const keterangan = document.getElementById('bank-keterangan').value;
+    const petugas = currentUser ? currentUser.nama : "Admin";
+
+    if(!tanggal || !jenis_mutasi || !nominal || !keterangan) {
+        alert("Semua data formulir bank wajib diisi!");
+        return;
+    }
+
+    const payloadBank = {
+        tanggal: tanggal,
+        jenis_mutasi: jenis_mutasi,
+        nominal: Number(nominal),
+        keterangan: keterangan,
+        petugas: petugas
+    };
+
+    const btnSimpan = event.target.querySelector('button[type="submit"]');
+    const teksAsli = btnSimpan.innerText;
+    btnSimpan.innerText = "⏳ Menyimpan ke Cloud...";
+    btnSimpan.disabled = true;
+
+    try {
+        const URL_GAS = state.gasUrl;
+        if(!URL_GAS || URL_GAS.includes("script.google.com/macros/s/...")) {
+            throw new Error("URL Web App GAS belum dikonfigurasi di Pengaturan!");
+        }
+
+        // Kirim data mutasi baru ke fungsi doPost() Google Sheets
+        const response = await fetch(URL_GAS, {
+            method: "POST",
+            mode: "no-cors", 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "add_bank",
+                data: payloadBank
+            })
+        });
+
+        alert("✅ BERHASIL!\nData transaksi mutasi bank operasional telah tersimpan di Google Sheets.");
+        
+        // Reset isi form input
+        document.getElementById('form-bank').reset();
+        
+        // Tarik ulang cloud data agar tampilan layar langsung terupdate otomatis
+        await tarikDataDariSheets();
+        
+    } catch (err) {
+        console.error(err);
+        alert("❌ Gagal Menyimpan Data Bank:\n" + err.message);
+    } finally {
+        btnSimpan.disabled = false;
+        btnSimpan.innerText = teksAsli;
+    }
+}
+// FUNGSI BARU: Untuk mengatur perpindahan halaman secara dinamis dan mengaktifkan menu Bank
+function switchScreen(screenId) {
+    // 1. Sembunyikan semua elemen kontainer utama terlebih dahulu
+    const dashboardContainer = document.getElementById('dashboard-view') || document.querySelector('.main-content');
+    const formPemasukan = document.getElementById('form-pemasukan-container');
+    const formPengeluaran = document.getElementById('form-pengeluaran-container');
+    const screenBank = document.getElementById('screen-bank');
+    const screenInventaris = document.getElementById('screen-inventaris') || document.getElementById('inventaris-container');
+    const screenPengaturan = document.getElementById('menu-pengaturan') || document.getElementById('screen-pengaturan');
+
+    // Sembunyikan semua layar tambahan jika elemennya ada
+    if(formPemasukan) formPemasukan.style.display = 'none';
+    if(formPengeluaran) formPengeluaran.style.display = 'none';
+    if(screenBank) screenBank.style.display = 'none';
+    if(screenInventaris) screenInventaris.style.display = 'none';
+    if(screenPengaturan) screenPengaturan.style.display = 'none';
+
+    // 2. Tampilkan kontainer berdasarkan menu yang diklik
+    if (screenId === 'bank') {
+        if(screenBank) {
+            screenBank.style.display = 'block';
+        }
+    }
+    
+    // Hilangkan semua class 'active' dari menu sidebar, lalu pasang di menu yang aktif
+    const menuItems = document.querySelectorAll('.sidebar-menu li');
+    menuItems.forEach(item => item.classList.remove('active'));
+    
+    // Jalankan kalkulasi data terbaru
+    if(typeof loadTables === "function") loadTables();
+    if(typeof updateDashboardMetrics === "function") updateDashboardMetrics();
 }
     </script>
 </body>
