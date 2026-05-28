@@ -933,11 +933,6 @@
     </div>
 
     <script>
-        // =========================================================
-// SUNTIKAN PENGAMAN AWAL: Mencegah Eror Null Reading 'map'
-// =========================================================
-
-// =========================================================
         let state = {
             pemasukan: JSON.parse(localStorage.getItem('bumdes_pemasukan')) || [],
             pengeluaran: JSON.parse(localStorage.getItem('bumdes_pengeluaran')) || [],
@@ -963,36 +958,7 @@
             gasUrl: localStorage.getItem('bumdes_gas_url') || ""
         };
 
-// =========================================================
-// SUNTIKAN PENGAMAN AWAL: Mencegah Eror Null Reading 'map'
-// =========================================================
-(function MencegahCrashAwal() {
-    const daftarKunci = [
-        'bumdes_pemasukan', 
-        'bumdes_pengeluaran', 
-        'bumdes_inventaris', 
-        'bumdes_dataInventaris',
-        'bumdes_kas_bank'
-    ];
-    
-    daftarKunci.forEach(kunci => {
-        if (localStorage.getItem(kunci) === null || localStorage.getItem(kunci) === "null") {
-            localStorage.setItem(kunci, JSON.stringify([]));
-        }
-    });
-    
-    // Pastikan objek state internal aplikasi memiliki cadangan array kosong
-    if (typeof state !== 'undefined') {
-        state.pemasukan = state.pemasukan || [];
-        state.dataPemasukan = state.dataPemasukan || [];
-        state.pengeluaran = state.pengeluaran || [];
-        state.dataPengeluaran = state.dataPengeluaran || [];
-        state.inventaris = state.inventaris || [];
-        state.dataInventaris = state.dataInventaris || [];
-        state.dataBank = state.dataBank || [];
-    }
-})();
-// =========================================================
+
         let currentUser = null;
         let chart1 = null;
         let chart2 = null;
@@ -1034,6 +1000,7 @@
 
         window.onload = function() {
     const currentMonthStr = new Date().toISOString().slice(0, 7); 
+    tarikDataDariSheets();
     
     // 1. Sinkronisasi filter bulan pemasukan bawaan asli
     if (document.getElementById('filter-pemasukan-bulan')) {
@@ -1141,6 +1108,7 @@
         
         // 4. KOREKSI TOTAL: Ubah ke 'grid' agar layout utama muncul dengan struktur yang benar
         document.getElementById('app-screen').style.display = 'grid'; 
+        tarikDataDariSheets();
         
         // Render grafik bawaan Anda
         setTimeout(renderCharts, 200);
@@ -1217,31 +1185,35 @@ function switchModule(moduleId, element) {
     const bulanKeluar = filterKeluarEl && filterKeluarEl.value ? filterKeluarEl.value : currentMonthStr;
     const bulanBank = filterBankEl && filterBankEl.value ? filterBankEl.value : currentMonthStr; 
 
-    // REVISI: Menggunakan (state.data || []) sebagai pengaman mutlak
-    let dataMasukFiltered = (state.pemasukan || []).filter(m => m.tanggal && m.tanggal.startsWith(bulanMasuk));
-    let dataKeluarFiltered = (state.pengeluaran || []).filter(k => k.tanggal && k.tanggal.startsWith(bulanKeluar));
+    // Saring data berdasarkan tahun-bulan (YYYY-MM)
+    let dataMasukFiltered = state.pemasukan || [];
+
+let dataKeluarFiltered = state.pengeluaran || [];
+    
+    // Pastikan array bank aman dari error undefined sebelum di-filter
     const listBank = state.dataBank || [];
     
+    // SINKRONISASI SALDO URUT KRONOLOGIS: Urutkan data bank dari tanggal terlama ke terbaru untuk perhitungan saldo riil
     const dataBankSortedKronologis = [...listBank].sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
     // ==========================================
-    // 1. RENDER TABEL PEMASUKAN
+    // 1. RENDER TABEL PEMASUKAN (Bawaan Asli)
     // ==========================================
     const tMasuk = document.getElementById('table-pemasukan-body');
     if (tMasuk) {
         if(dataMasukFiltered.length === 0) {
-            tMasuk.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada data transaksi bulan ini.</td></tr>`;
+            tMasuk.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada entri data transaksi pada bulan ini.</td></tr>`;
         } else {
             tMasuk.innerHTML = dataMasukFiltered.map(m => `
                 <tr>
-                    <td>${m.id || ''}</td>
+                    <td>${m.no_transaksi || ''}</td>
                     <td>${m.tanggal || ''}</td>
-                    <td><span class="font-bold">${m.unit || ''}</span></td>
+                    <td><span class="font-bold">${m.unit_usaha || ''}</span></td>
                     <td>${m.keterangan || ''}</td>
                     <td class="text-right font-bold text-success">${formatRupiah(m.nominal)}</td>
                     <td>${m.petugas || ''}</td>
                     <td class="no-print">
-                        <button class="btn-action btn-delete" ${currentUser && currentUser.role==='Viewer'?'disabled':''} onclick="hapusTransaksi('pemasukan', '${m.id}')">Hapus</button>
+                        <button class="btn-action btn-delete" ${currentUser && currentUser.role==='Viewer'?'disabled':''} onclick="hapusTransaksi('pemasukan', '${m.no_transaksi}')')">Hapus</button>
                     </td>
                 </tr>
             `).join('');
@@ -1249,23 +1221,23 @@ function switchModule(moduleId, element) {
     }
 
     // ==========================================
-    // 2. RENDER TABEL PENGELUARAN
+    // 2. RENDER TABEL PENGELUARAN (Bawaan Asli)
     // ==========================================
     const tKeluar = document.getElementById('table-pengeluaran-body');
     if (tKeluar) {
         if(dataKeluarFiltered.length === 0) {
-            tKeluar.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada data transaksi bulan ini.</td></tr>`;
+            tKeluar.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada entri data transaksi pada bulan ini.</td></tr>`;
         } else {
             tKeluar.innerHTML = dataKeluarFiltered.map(k => `
                 <tr>
-                    <td>${k.id || ''}</td>
+                    <td>${k.no_transaksi || ''}</td>
                     <td>${k.tanggal || ''}</td>
                     <td><span class="font-bold">${k.kategori || ''}</span></td>
                     <td>${k.keterangan || ''}</td>
                     <td class="text-right font-bold text-danger">${formatRupiah(k.nominal)}</td>
                     <td>${k.petugas || ''}</td>
                     <td class="no-print">
-                        <button class="btn-action btn-delete" ${currentUser && currentUser.role==='Viewer'?'disabled':''} onclick="hapusTransaksi('pengeluaran', '${k.id}')">Hapus</button>
+                        <button class="btn-action btn-delete" ${currentUser && currentUser.role==='Viewer'?'disabled':''} onclick="hapusTransaksi('pengeluaran', '${k.no_transaksi}')')">Hapus</button>
                     </td>
                 </tr>
             `).join('');
@@ -1273,8 +1245,9 @@ function switchModule(moduleId, element) {
     }
 
     // ==========================================
-    // 3. RENDER TABEL MUTASI BANK
+    // 3. REVISI SINKRONISASI: RENDER TABEL MUTASI BANK OPERASIONAL
     // ==========================================
+    // KOREKSI UTAMA: Menggunakan ID 'table-bank-body' dan 'tbody-bank' (Proteksi Ganda agar tidak salah sasaran)
     const tBank = document.getElementById('table-bank-body') || document.getElementById('tbody-bank');
     if (tBank) {
         let saldoKumulatifBerjalan = 0;
@@ -1283,15 +1256,24 @@ function switchModule(moduleId, element) {
 
         dataBankSortedKronologis.forEach(b => {
             const nominal = Number(b.nominal || 0);
+            
+            // Hitung dampak transaksi terhadap saldo internal bank
             if (b.jenis_mutasi === "Setor" || b.jenis_mutasi === "Bunga_Bank") {
                 saldoKumulatifBerjalan += nominal;
             } else if (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") {
                 saldoKumulatifBerjalan -= nominal;
             }
 
+            // Saring: Hanya tampilkan data yang bulannya sesuai dengan filter bulan bank saat ini
             if (b.tanggal && b.tanggal.startsWith(bulanBank)) {
-                let classWarnaNominal = (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") ? "text-danger" : "text-success";
-                let penandaSimbol = (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") ? "- " : "+ ";
+                let classWarnaNominal = "text-success";
+                let penandaSimbol = "+ ";
+                
+                if (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") {
+                    classWarnaNominal = "text-danger";
+                    penandaSimbol = "- ";
+                }
+
                 const namaBadge = String(b.jenis_mutasi || '').replace('_', ' ');
 
                 htmlBarisBank += `
@@ -1309,12 +1291,17 @@ function switchModule(moduleId, element) {
             }
         });
 
-        tBank.innerHTML = (htmlBarisBank === "") ? `<tr><td colspan="7" class="text-center" style="color:var(--text-muted); padding:15px;">Tidak ada data mutasi bulan ${bulanBank}.</td></tr>` : htmlBarisBank;
+        if (htmlBarisBank === "") {
+            tBank.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted); padding:15px;">Tidak ada riwayat mutasi bank pada bulan ${bulanBank}.</td></tr>`;
+        } else {
+            tBank.innerHTML = htmlBarisBank;
+        }
     }
 
     // ==========================================
-    // 4. AKTIFKAN MODUL INVENTARIS (DENGAN PENGAMAN)
+    // 4. KESINAMBUNGAN SAKTI: AKTIFKAN MODUL INVENTARIS
     // ==========================================
+    // Menjamin setiap fungsi tarikData/initApp berjalan, tabel inventaris ikut dimutakhirkan datanya
     if (typeof renderTabelInventaris === "function") {
         renderTabelInventaris();
     }
@@ -1430,7 +1417,7 @@ async function simpanMutasiBank() {
 
     // Kirim data secara real-time ke Google Sheet Cloud
     if (state.gasUrl) {
-        await syncToGasBackend('add_bank', newMutasi);
+        await syncToGasBackend('tambahBank', newMutasi);
     }
 
     // Bersihkan kembali form input
@@ -1458,88 +1445,38 @@ async function simpanMutasiBank() {
 
         
 function updateDashboardMetrics() {
-    try {
-        let bulanAktif = new Date().toISOString().slice(0,7);
 
-        // ambil filter laporan utama
-        const filter1 = document.getElementById('filter-bulan-laporan');
+    const pemasukan =
+        state.pemasukan || [];
 
-        // ambil filter laporan versi lain
-        const filter2 = document.getElementById('filter-laporan-bulan');
+    const pengeluaran =
+        state.pengeluaran || [];
 
-        // prioritaskan filter yang ada isinya
-        if (filter1 && filter1.value) {
-            bulanAktif = filter1.value;
-        } else if (filter2 && filter2.value) {
-            bulanAktif = filter2.value;
-        }
+    const totalMasuk =
+        pemasukan.reduce(
+            (a,b)=>a + Number(b.nominal || 0),
+            0
+        );
 
-        // --- MULAI AREA REVISI ---
-        const saldoAwalSistem = dapatkanSaldoAwalBulanPilihan(bulanAktif);
+    const totalKeluar =
+        pengeluaran.reduce(
+            (a,b)=>a + Number(b.nominal || 0),
+            0
+        );
 
-        const totalMasuk = state.pemasukan
-            .filter(function(item) {
-                if (!item || !item.tanggal) return false;
-                return item.tanggal.slice(0, 7) === bulanAktif;
-            })
-            .reduce(function(sum, item) {
-                return sum + Number(item.nominal || 0);
-            }, 0);
+    const totalKas =
+        totalMasuk - totalKeluar;
 
-        const totalKeluar = state.pengeluaran
-            .filter(function(item) {
-                if (!item || !item.tanggal) return false;
-                return item.tanggal.slice(0, 7) === bulanAktif;
-            })
-            .reduce(function(sum, item) {
-                return sum + Number(item.nominal || 0);
-            }, 0);
+    document.getElementById('dashboard-pemasukan').innerText =
+        formatRupiah(totalMasuk);
 
-        const kasTunai = saldoAwalSistem + totalMasuk - totalKeluar;
+    document.getElementById('dashboard-pengeluaran').innerText =
+        formatRupiah(totalKeluar);
 
-        let kasBank = 0;
-        if (state.dataBank && state.dataBank.length > 0) {
-            state.dataBank.forEach(function(mutasi) {
-                if (!mutasi || !mutasi.tanggal) return;
-                if (mutasi.tanggal.slice(0, 7) === bulanAktif) {
-                    const tipe = mutasi.jenis_mutasi;
-                    const nilai = Number(mutasi.nominal || 0);
+    document.getElementById('dashboard-total-kas').innerText =
+        formatRupiah(totalKas);
 
-                    if (tipe === 'Setor' || tipe === 'Bunga_Bank') {
-                        kasBank += nilai;
-                    } else if (tipe === 'Tarik' || tipe === 'Biaya_Admin') {
-                        kasBank -= nilai;
-                    }
-                }
-            });
-        }
-        // --- AKHIR AREA REVISI ---
-
-        const totalKeuanganAktif = kasTunai + kasBank;
-
-        if (document.getElementById('stat-masuk-hari-ini')) {
-            document.getElementById('stat-masuk-hari-ini').innerText = formatRupiah(totalMasuk);
-        }
-
-        if (document.getElementById('stat-keluar-hari-ini')) {
-            document.getElementById('stat-keluar-hari-ini').innerText = formatRupiah(totalKeluar);
-        }
-
-        if (document.getElementById('stat-laba-bersih')) {
-            document.getElementById('stat-laba-bersih').innerText = formatRupiah(totalKeuanganAktif);
-        }
-
-        if (document.getElementById('kas-tunai-display')) {
-            document.getElementById('kas-tunai-display').innerText = formatRupiah(kasTunai);
-        }
-
-        if (document.getElementById('kas-bank-display')) {
-            document.getElementById('kas-bank-display').innerText = formatRupiah(kasBank);
-        }
-
-    } catch(err) {
-        console.error('ERROR updateDashboardMetrics:', err);
-    }
+    console.log("Dashboard berhasil update");
 }
         function renderCharts() {
             const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
@@ -1670,7 +1607,18 @@ function updateDashboardMetrics() {
                 document.getElementById('rep-judul-jenis').innerText = "LAPORAN LABA RUGI OPERASIONAL";
                 
                 let rekapIn = {}; state.unitUsaha.forEach(u => rekapIn[u] = 0);
-                filteredPemasukan.forEach(m => { if(rekapIn[m.unit] !== undefined) rekapIn[m.unit] += m.nominal; });
+                filteredPemasukan.forEach(m => {
+
+    const unitUsaha =
+        m.unit || m.unit_usaha;
+
+    if(rekapIn[unitUsaha] !== undefined) {
+
+        rekapIn[unitUsaha] +=
+            Number(m.nominal || 0);
+    }
+
+});
 
                 let rekapOut = {}; state.kategoriKeluar.forEach(k => rekapOut[k] = 0);
                 filteredPengeluaran.forEach(k => { if(rekapOut[k.kategori] !== undefined) rekapOut[k.kategori] += k.nominal; });
@@ -1701,8 +1649,17 @@ function updateDashboardMetrics() {
             } else if(jLap === 'neraca') {
                 document.getElementById('rep-judul-jenis').innerText = "LAPORAN NERACA BALANCE BULANAN";
                 
-                let totalInBulanIni = filteredPemasukan.reduce((a,b)=>a+b.nominal, 0);
-                let totalOutBulanIni = filteredPengeluaran.reduce((a,b)=>a+b.nominal, 0);
+                let totalInBulanIni =
+    filteredPemasukan.reduce(
+        (a,b)=>a + Number(b.nominal || 0),
+        0
+    );
+
+let totalOutBulanIni =
+    filteredPengeluaran.reduce(
+        (a,b)=>a + Number(b.nominal || 0),
+        0
+    );
                 let kasAkhirBulanIni = saldoAwalBulanIni + totalInBulanIni - totalOutBulanIni;
 
                 let html = `<table class="report-table">
@@ -1726,8 +1683,17 @@ function updateDashboardMetrics() {
             } else if(jLap === 'aruskas') {
                 document.getElementById('rep-judul-jenis').innerText = "LAPORAN ARUS KAS MASUK KELUAR BULANAN";
                 
-                let opsIn = filteredPemasukan.reduce((a,b)=>a+b.nominal, 0);
-                let opsOut = filteredPengeluaran.reduce((a,b)=>a+b.nominal, 0);
+                let opsIn =
+    filteredPemasukan.reduce(
+        (a,b)=>a + Number(b.nominal || 0),
+        0
+    );
+
+let opsOut =
+    filteredPengeluaran.reduce(
+        (a,b)=>a + Number(b.nominal || 0),
+        0
+    );
                 let kenaikanKasNetto = opsIn - opsOut;
 
                 let html = `<table class="report-table">
@@ -1761,8 +1727,17 @@ function updateDashboardMetrics() {
                 }
             } else {
                 if(confirm(`Apakah Anda yakin ingin melakukan PROSES TUTUP BUKU untuk bulan [${bulanStr}]?\n\nSemua data transaksi di bulan ini akan DIKUNCI.`)) {
-                    let filteredPemasukan = state.pemasukan.filter(m => m.tanggal.startsWith(bulanStr));
-                    let filteredPengeluaran = state.pengeluaran.filter(k => k.tanggal.startsWith(bulanStr));
+                    let filteredPemasukan =
+    state.pemasukan.filter(
+        m => String(m.tanggal || '')
+        .startsWith(bulanStr)
+    );
+
+let filteredPengeluaran =
+    state.pengeluaran.filter(
+        k => String(k.tanggal || '')
+        .startsWith(bulanStr)
+    );
                     let saldoAwalBulanIni = hitungSaldoAwalBulanPilihan(bulanStr);
                     let totalIn = filteredPemasukan.reduce((a,b)=>a+b.nominal, 0);
                     let totalOut = filteredPengeluaran.reduce((a,b)=>a+b.nominal, 0);
@@ -1935,7 +1910,7 @@ function updateDashboardMetrics() {
     if (action === 'tambahPengeluaran') gasAction = "add_pengeluaran";
     
     // Pemetaan aksi untuk Bank Operasional, Profil, & TTD
-    if (action === 'add_bank') gasAction = "add_bank";
+    if (action === 'tambahBank') gasAction = "add_bank";
     if (action === 'save_profil') gasAction = "save_profil";
     if (action === 'save_ttd') gasAction = "save_ttd";
 
@@ -1966,88 +1941,345 @@ function updateDashboardMetrics() {
         console.error("Gagal sinkronisasi otomatis ke cloud: ", error);
     }
 }       
-    async function tarikDataDariSheets() {
-    const URL_GAS = state.gasUrl;
-    
-    if(!URL_GAS || URL_GAS.includes("script.google.com/macros/s/...")) {
-        alert("⚠️ Gagal Menarik Data:\nURL Web App Google Apps Script belum dikonfigurasi di menu Pengaturan!");
-        return;
-    }
-
-    const btnNav = document.querySelector('li[onclick="tarikDataDariSheets()"]');
-    const txtAsli = btnNav ? btnNav.innerHTML : "";
-    if(btnNav) btnNav.innerHTML = "⏳ Menarik Data...";
+     async function tarikDataDariSheets(showNotif = false) {
 
     try {
-        const response = await fetch(URL_GAS + "?action=tarikData", {
-            method: "GET",
-            mode: "cors",
-            credentials: "omit"
-        });
 
-        if (!response.ok) throw new Error("Respon server Google tidak sukses.");
+        console.log("Mengambil data dari Google Sheets...");
 
-        const res = await response.json();
-        
-        // Memastikan res ada isinya sebelum diproses
-        if(res) {
-            // Sinkronisasi Data Sesuai Struktur 'db' di Kode.gs
-            state.pengaturan = res.pengaturan || {};
-            state.pengguna = res.pengguna || [];
-            
-            // Data Transaksi & Bank
-            state.pemasukan = res.pemasukan || [];
-            state.dataPemasukan = res.pemasukan || [];
-            
-            state.pengeluaran = res.pengeluaran || [];
-            state.dataPengeluaran = res.pengeluaran || [];
-            
-            state.dataBank = res.dataBank || [];
-            
-            // Data Inventaris
-            state.dataInventaris = res.dataInventaris || [];
-            state.inventaris = res.dataInventaris || []; 
-
-            // Master Data
-            state.unitUsaha = res.unitUsaha || [];
-            state.kategoriKeluar = res.kategoriKeluar || [];
-
-            // Simpan ke LocalStorage
-            localStorage.setItem('bumdes_pemasukan', JSON.stringify(state.pemasukan));
-            localStorage.setItem('bumdes_pengeluaran', JSON.stringify(state.pengeluaran));
-            localStorage.setItem('bumdes_dataInventaris', JSON.stringify(state.dataInventaris));
-            localStorage.setItem('bumdes_inventaris', JSON.stringify(state.inventaris));
-
-            console.log("Data berhasil dimuat ke RAM:", res);
-
-            // Render UI
-            if (typeof initPengaturanUI === "function") initPengaturanUI();
-            
-            if (typeof loadTables === "function") {
-                try {
-                    loadTables();
-                } catch(e) {
-                    console.error("Eror saat render tabel:", e);
-                }
+        // =========================================
+        // AMBIL DATA DARI GOOGLE APPS SCRIPT
+        // =========================================
+        const response = await fetch(
+            state.gasUrl + "?action=tarikData",
+            {
+                method: "GET",
+                mode: "cors"
             }
-            
-            if (typeof updateDashboardStats === "function") {
-                updateDashboardStats();
-            }
+        );
 
-            alert("✅ Sinkronisasi Berhasil!");
-        } else {
-            throw new Error("Data dari server kosong.");
+        const result = await response.json();
+
+        console.log("JSON DARI GAS:", result);
+
+        // =========================================
+        // PROFIL BUMDES
+        // =========================================
+        state.profil = result.profil || {};
+
+        // =========================================
+        // MASTER DATA
+        // =========================================
+        state.unitUsaha =
+    (result.master &&
+     result.master.unitUsaha)
+     ? result.master.unitUsaha
+     : [];
+
+state.kategoriKeluar =
+    (result.master &&
+     result.master.kategoriKeluar)
+     ? result.master.kategoriKeluar
+     : [];
+
+        // =========================================
+        // TANDA TANGAN LAPORAN
+        // =========================================
+        // =========================================
+// TANDA TANGAN LAPORAN
+// =========================================
+state.ttd = {
+
+    role1:
+        result.profil &&
+        result.profil.role1
+        ? result.profil.role1
+        : '',
+
+    nama1:
+        result.profil &&
+        result.profil.nama1
+        ? result.profil.nama1
+        : '',
+
+    role2:
+        result.profil &&
+        result.profil.role2
+        ? result.profil.role2
+        : '',
+
+    nama2:
+        result.profil &&
+        result.profil.nama2
+        ? result.profil.nama2
+        : '',
+
+    role3:
+        result.profil &&
+        result.profil.role3
+        ? result.profil.role3
+        : '',
+
+    nama3:
+        result.profil &&
+        result.profil.nama3
+        ? result.profil.nama3
+        : '',
+
+    role4:
+        result.profil &&
+        result.profil.role4
+        ? result.profil.role4
+        : '',
+
+    nama4:
+        result.profil &&
+        result.profil.nama4
+        ? result.profil.nama4
+        : ''
+};
+
+        // =========================================
+        // DATA PEMASUKAN
+        // =========================================
+        state.pemasukan =
+            (result.pemasukan || []).map(item => ({
+
+                id:
+                    item.no_transaksi || '',
+
+                no_transaksi:
+                    item.no_transaksi || '',
+
+                tanggal:
+                    item.tanggal || '',
+
+                unit:
+                    item.unit_usaha || '',
+
+                unit_usaha:
+                    item.unit_usaha || '',
+
+                keterangan:
+                    item.keterangan || '',
+
+                nominal:
+                    Number(item.nominal || 0),
+
+                petugas:
+                    item.petugas || ''
+            }));
+
+        // =========================================
+        // DATA PENGELUARAN
+        // =========================================
+        state.pengeluaran =
+            (result.pengeluaran || []).map(item => ({
+
+                id:
+                    item.no_transaksi || '',
+
+                no_transaksi:
+                    item.no_transaksi || '',
+
+                tanggal:
+                    item.tanggal || '',
+
+                kategori:
+                    item.kategori || '',
+
+                keterangan:
+                    item.keterangan || '',
+
+                nominal:
+                    Number(item.nominal || 0),
+
+                petugas:
+                    item.petugas || ''
+            }));
+
+        // =========================================
+        // DATA BANK
+        // =========================================
+        state.dataBank =
+            (result.dataBank || []).map(item => ({
+
+                no:
+                    item.no || '',
+
+                tanggal:
+                    item.tanggal || '',
+
+                jenis_mutasi:
+                    item.jenis_mutasi || '',
+
+                keterangan:
+                    item.keterangan || '',
+
+                nominal:
+                    Number(item.nominal || 0),
+
+                petugas:
+                    item.petugas || ''
+            }));
+
+        // =========================================
+        // DATA INVENTARIS
+        // =========================================
+        state.dataInventaris =
+            (result.inventaris || []).map(item => ({
+
+                id_aset:
+                    item.id_aset || '',
+
+                nama_aset:
+                    item.nama_aset || '',
+
+                tanggal_beli:
+                    item.tanggal_beli || '',
+
+                harga_perolehan:
+                    Number(item.harga_perolehan || 0),
+
+                umur_ekonomis_bulan:
+                    Number(item.umur_ekonomis_bulan || 0),
+
+                nilai_sisa:
+                    Number(item.nilai_sisa || 0)
+            }));
+
+        // =========================================
+        // HISTORY TUTUP BUKU
+        // =========================================
+        state.historyTutupBuku =
+            result.historyTutupBuku || {};
+
+        // =========================================
+        // DEBUG
+        // =========================================
+        console.log(
+            "Jumlah pemasukan:",
+            state.pemasukan.length
+        );
+
+        console.log(
+            "Jumlah pengeluaran:",
+            state.pengeluaran.length
+        );
+
+        console.log(
+            "Jumlah inventaris:",
+            state.dataInventaris.length
+        );
+
+        // =========================================
+        // REFRESH TABEL
+        // =========================================
+        // =========================================
+// REFRESH UI SATU PERSATU
+// =========================================
+
+try {
+
+    if (typeof loadTables === "function") {
+        loadTables();
+        console.log("loadTables OK");
+    }
+
+} catch(e) {
+
+    console.error("ERROR loadTables:", e);
+}
+
+try {
+
+    if (typeof refreshDropdownMaster === "function") {
+        refreshDropdownMaster();
+        console.log("refreshDropdownMaster OK");
+    }
+
+} catch(e) {
+
+    console.error("ERROR refreshDropdownMaster:", e);
+}
+
+try {
+
+    if (typeof renderTabelInventaris === "function") {
+        renderTabelInventaris();
+        console.log("renderTabelInventaris OK");
+    }
+
+} catch(e) {
+
+    console.error("ERROR renderTabelInventaris:", e);
+}
+
+try {
+
+    if (typeof updateDashboardMetrics === "function") {
+        updateDashboardMetrics();
+        console.log("updateDashboardMetrics OK");
+    }
+
+} catch(e) {
+
+    console.error("ERROR updateDashboardMetrics:", e);
+}
+
+try {
+
+    if (typeof renderCharts === "function") {
+        renderCharts();
+        console.log("renderCharts OK");
+    }
+
+} catch(e) {
+
+    console.error("ERROR renderCharts:", e);
+}
+
+try {
+
+    if (typeof generateLaporan === "function") {
+        generateLaporan();
+        console.log("generateLaporan OK");
+    }
+
+} catch(e) {
+
+    console.error("ERROR generateLaporan:", e);
+}
+
+        // =========================================
+        // NOTIF MANUAL SAJA
+        // =========================================
+        if (showNotif) {
+
+            alert(
+                "Sinkronisasi Google Sheets berhasil!"
+            );
         }
 
+        console.log(
+            "Sinkronisasi selesai."
+        );
+
     } catch(err) {
-        console.error("Kesalahan tarikDataDariSheets:", err);
-        alert("❌ Gagal memuat data.\nError: " + err.message);
-    } finally {
-        if(btnNav) btnNav.innerHTML = txtAsli;
-    }
+
+    console.error(
+        "ERROR TARIK DATA:",
+        err
+    );
+
+    alert(
+        "ERROR:\n\n" +
+        err.stack
+    );
 }
-        // =======================================================
+}
+
+// =======================================================
 // MODUL TAMBAHAN: MANAJEMEN INVENTARIS & PENYUSUTAN ASET
 // =======================================================
 
