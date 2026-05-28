@@ -1968,19 +1968,17 @@ function updateDashboardMetrics() {
 }       
     async function tarikDataDariSheets() {
     const URL_GAS = state.gasUrl;
-    // Jika URL kosong atau masih bawaan template, ingatkan user
+    
     if(!URL_GAS || URL_GAS.includes("script.google.com/macros/s/...")) {
         alert("⚠️ Gagal Menarik Data:\nURL Web App Google Apps Script belum dikonfigurasi di menu Pengaturan!");
         return;
     }
 
-    // Cari tombol sinkronisasi di navbar untuk memberikan efek loading
     const btnNav = document.querySelector('li[onclick="tarikDataDariSheets()"]');
     const txtAsli = btnNav ? btnNav.innerHTML : "";
     if(btnNav) btnNav.innerHTML = "⏳ Menarik Data...";
 
     try {
-        // Ambil data dari Apps Script menggunakan action=tarikData sesuai bawaan file Anda
         const response = await fetch(URL_GAS + "?action=tarikData", {
             method: "GET",
             mode: "cors",
@@ -1991,52 +1989,45 @@ function updateDashboardMetrics() {
 
         const res = await response.json();
         
+        // Memastikan res ada isinya sebelum diproses
         if(res) {
-            // 1. Sinkronisasi Pengaturan & Profil
+            // Sinkronisasi Data Sesuai Struktur 'db' di Kode.gs
             state.pengaturan = res.pengaturan || {};
-            state.profil = res.profil || {};
-            state.historyTutupBuku = res.historyTutupBuku || {};
+            state.pengguna = res.pengguna || [];
             
-            // 2. Sinkronisasi Data Kas Bank
-            state.dataBank = res.dataBank || res.kasBank || []; 
-            
-            // 3. PROTEKSI MUTLAK AGAR MAP() TIDAK READ PROPERTIES OF NULL []
-            // Menggunakan pengaman ganda (|| []) agar jika data dari GAS kosong, sistem tidak crash null
-            
-            // Pemasukan
+            // Data Transaksi & Bank
             state.pemasukan = res.pemasukan || [];
             state.dataPemasukan = res.pemasukan || [];
-
-            // Pengeluaran
-            state.pengeluaran = res.pengeluaran || [];
-            state.dataPengeluaran = res.pengeluaran || []; 
             
-            // Inventaris / Aset Manajemen (Diisi ke semua kemungkinan nama variabel pembentuk tabel)
-            const inventarisAman = res.dataInventaris || res.inventaris || [];
-            state.dataInventaris = inventarisAman;
-            state.inventaris = inventarisAman; 
+            state.pengeluaran = res.pengeluaran || [];
+            state.dataPengeluaran = res.pengeluaran || [];
+            
+            state.dataBank = res.dataBank || [];
+            
+            // Data Inventaris
+            state.dataInventaris = res.dataInventaris || [];
+            state.inventaris = res.dataInventaris || []; 
 
-            // Master Data Dropdown Options
+            // Master Data
             state.unitUsaha = res.unitUsaha || [];
             state.kategoriKeluar = res.kategoriKeluar || [];
 
-            // 4. Simpan Cadangan ke LocalStorage (Gunakan nama kunci yang konsisten)
+            // Simpan ke LocalStorage
             localStorage.setItem('bumdes_pemasukan', JSON.stringify(state.pemasukan));
             localStorage.setItem('bumdes_pengeluaran', JSON.stringify(state.pengeluaran));
             localStorage.setItem('bumdes_dataInventaris', JSON.stringify(state.dataInventaris));
             localStorage.setItem('bumdes_inventaris', JSON.stringify(state.inventaris));
 
-            console.log("RAM Aplikasi berhasil disinkronkan. Memperbarui UI...");
+            console.log("Data berhasil dimuat ke RAM:", res);
 
-            // 5. Jalankan fungsi render bawaan file DummyAkuntasi-2.html Anda
+            // Render UI
             if (typeof initPengaturanUI === "function") initPengaturanUI();
             
-            // Proteksi pemanggilan loadTables agar jika baris 1584 bermasalah, dihandle dengan aman
             if (typeof loadTables === "function") {
                 try {
                     loadTables();
                 } catch(e) {
-                    console.error("Eror internal saat render tabel, mencoba bypass:", e);
+                    console.error("Eror saat render tabel:", e);
                 }
             }
             
@@ -2044,19 +2035,19 @@ function updateDashboardMetrics() {
                 updateDashboardStats();
             }
 
-            alert("✅ Sinkronisasi Berhasil!\nSeluruh data Pemasukan, Pengeluaran, Kas Bank, dan Inventaris berhasil dimuat ke dalam tabel.");
+            alert("✅ Sinkronisasi Berhasil!");
         } else {
-            throw new Error("Format database JSON dari server tidak sesuai.");
+            throw new Error("Data dari server kosong.");
         }
 
     } catch(err) {
         console.error("Kesalahan tarikDataDariSheets:", err);
-        alert("❌ Gagal memuat data dari Google Sheets.\nPeriksa struktur tabel atau URL Web App di Pengaturan.\nError: " + err.message);
+        alert("❌ Gagal memuat data.\nError: " + err.message);
     } finally {
         if(btnNav) btnNav.innerHTML = txtAsli;
     }
 }
-// =======================================================
+        // =======================================================
 // MODUL TAMBAHAN: MANAJEMEN INVENTARIS & PENYUSUTAN ASET
 // =======================================================
 
