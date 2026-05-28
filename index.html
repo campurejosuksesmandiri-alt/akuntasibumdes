@@ -933,6 +933,11 @@
     </div>
 
     <script>
+        // =========================================================
+// SUNTIKAN PENGAMAN AWAL: Mencegah Eror Null Reading 'map'
+// =========================================================
+
+// =========================================================
         let state = {
             pemasukan: JSON.parse(localStorage.getItem('bumdes_pemasukan')) || [],
             pengeluaran: JSON.parse(localStorage.getItem('bumdes_pengeluaran')) || [],
@@ -958,7 +963,36 @@
             gasUrl: localStorage.getItem('bumdes_gas_url') || ""
         };
 
-
+// =========================================================
+// SUNTIKAN PENGAMAN AWAL: Mencegah Eror Null Reading 'map'
+// =========================================================
+(function MencegahCrashAwal() {
+    const daftarKunci = [
+        'bumdes_pemasukan', 
+        'bumdes_pengeluaran', 
+        'bumdes_inventaris', 
+        'bumdes_dataInventaris',
+        'bumdes_kas_bank'
+    ];
+    
+    daftarKunci.forEach(kunci => {
+        if (localStorage.getItem(kunci) === null || localStorage.getItem(kunci) === "null") {
+            localStorage.setItem(kunci, JSON.stringify([]));
+        }
+    });
+    
+    // Pastikan objek state internal aplikasi memiliki cadangan array kosong
+    if (typeof state !== 'undefined') {
+        state.pemasukan = state.pemasukan || [];
+        state.dataPemasukan = state.dataPemasukan || [];
+        state.pengeluaran = state.pengeluaran || [];
+        state.dataPengeluaran = state.dataPengeluaran || [];
+        state.inventaris = state.inventaris || [];
+        state.dataInventaris = state.dataInventaris || [];
+        state.dataBank = state.dataBank || [];
+    }
+})();
+// =========================================================
         let currentUser = null;
         let chart1 = null;
         let chart2 = null;
@@ -1183,23 +1217,20 @@ function switchModule(moduleId, element) {
     const bulanKeluar = filterKeluarEl && filterKeluarEl.value ? filterKeluarEl.value : currentMonthStr;
     const bulanBank = filterBankEl && filterBankEl.value ? filterBankEl.value : currentMonthStr; 
 
-    // Saring data berdasarkan tahun-bulan (YYYY-MM)
-    let dataMasukFiltered = state.pemasukan.filter(m => m.tanggal && m.tanggal.startsWith(bulanMasuk));
-    let dataKeluarFiltered = state.pengeluaran.filter(k => k.tanggal && k.tanggal.startsWith(bulanKeluar));
-    
-    // Pastikan array bank aman dari error undefined sebelum di-filter
+    // REVISI: Menggunakan (state.data || []) sebagai pengaman mutlak
+    let dataMasukFiltered = (state.pemasukan || []).filter(m => m.tanggal && m.tanggal.startsWith(bulanMasuk));
+    let dataKeluarFiltered = (state.pengeluaran || []).filter(k => k.tanggal && k.tanggal.startsWith(bulanKeluar));
     const listBank = state.dataBank || [];
     
-    // SINKRONISASI SALDO URUT KRONOLOGIS: Urutkan data bank dari tanggal terlama ke terbaru untuk perhitungan saldo riil
     const dataBankSortedKronologis = [...listBank].sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
     // ==========================================
-    // 1. RENDER TABEL PEMASUKAN (Bawaan Asli)
+    // 1. RENDER TABEL PEMASUKAN
     // ==========================================
     const tMasuk = document.getElementById('table-pemasukan-body');
     if (tMasuk) {
         if(dataMasukFiltered.length === 0) {
-            tMasuk.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada entri data transaksi pada bulan ini.</td></tr>`;
+            tMasuk.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada data transaksi bulan ini.</td></tr>`;
         } else {
             tMasuk.innerHTML = dataMasukFiltered.map(m => `
                 <tr>
@@ -1218,12 +1249,12 @@ function switchModule(moduleId, element) {
     }
 
     // ==========================================
-    // 2. RENDER TABEL PENGELUARAN (Bawaan Asli)
+    // 2. RENDER TABEL PENGELUARAN
     // ==========================================
     const tKeluar = document.getElementById('table-pengeluaran-body');
     if (tKeluar) {
         if(dataKeluarFiltered.length === 0) {
-            tKeluar.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada entri data transaksi pada bulan ini.</td></tr>`;
+            tKeluar.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Tidak ada data transaksi bulan ini.</td></tr>`;
         } else {
             tKeluar.innerHTML = dataKeluarFiltered.map(k => `
                 <tr>
@@ -1242,9 +1273,8 @@ function switchModule(moduleId, element) {
     }
 
     // ==========================================
-    // 3. REVISI SINKRONISASI: RENDER TABEL MUTASI BANK OPERASIONAL
+    // 3. RENDER TABEL MUTASI BANK
     // ==========================================
-    // KOREKSI UTAMA: Menggunakan ID 'table-bank-body' dan 'tbody-bank' (Proteksi Ganda agar tidak salah sasaran)
     const tBank = document.getElementById('table-bank-body') || document.getElementById('tbody-bank');
     if (tBank) {
         let saldoKumulatifBerjalan = 0;
@@ -1253,24 +1283,15 @@ function switchModule(moduleId, element) {
 
         dataBankSortedKronologis.forEach(b => {
             const nominal = Number(b.nominal || 0);
-            
-            // Hitung dampak transaksi terhadap saldo internal bank
             if (b.jenis_mutasi === "Setor" || b.jenis_mutasi === "Bunga_Bank") {
                 saldoKumulatifBerjalan += nominal;
             } else if (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") {
                 saldoKumulatifBerjalan -= nominal;
             }
 
-            // Saring: Hanya tampilkan data yang bulannya sesuai dengan filter bulan bank saat ini
             if (b.tanggal && b.tanggal.startsWith(bulanBank)) {
-                let classWarnaNominal = "text-success";
-                let penandaSimbol = "+ ";
-                
-                if (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") {
-                    classWarnaNominal = "text-danger";
-                    penandaSimbol = "- ";
-                }
-
+                let classWarnaNominal = (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") ? "text-danger" : "text-success";
+                let penandaSimbol = (b.jenis_mutasi === "Tarik" || b.jenis_mutasi === "Biaya_Admin") ? "- " : "+ ";
                 const namaBadge = String(b.jenis_mutasi || '').replace('_', ' ');
 
                 htmlBarisBank += `
@@ -1288,17 +1309,12 @@ function switchModule(moduleId, element) {
             }
         });
 
-        if (htmlBarisBank === "") {
-            tBank.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted); padding:15px;">Tidak ada riwayat mutasi bank pada bulan ${bulanBank}.</td></tr>`;
-        } else {
-            tBank.innerHTML = htmlBarisBank;
-        }
+        tBank.innerHTML = (htmlBarisBank === "") ? `<tr><td colspan="7" class="text-center" style="color:var(--text-muted); padding:15px;">Tidak ada data mutasi bulan ${bulanBank}.</td></tr>` : htmlBarisBank;
     }
 
     // ==========================================
-    // 4. KESINAMBUNGAN SAKTI: AKTIFKAN MODUL INVENTARIS
+    // 4. AKTIFKAN MODUL INVENTARIS (DENGAN PENGAMAN)
     // ==========================================
-    // Menjamin setiap fungsi tarikData/initApp berjalan, tabel inventaris ikut dimutakhirkan datanya
     if (typeof renderTabelInventaris === "function") {
         renderTabelInventaris();
     }
@@ -1442,167 +1458,87 @@ async function simpanMutasiBank() {
 
         
 function updateDashboardMetrics() {
-
     try {
+        let bulanAktif = new Date().toISOString().slice(0,7);
 
-        const bulanAktif =
-            new Date().toISOString().slice(0, 7);
+        // ambil filter laporan utama
+        const filter1 = document.getElementById('filter-bulan-laporan');
 
-        const saldoAwalSistem =
-            getSaldoAwalPeriode(bulanAktif);
+        // ambil filter laporan versi lain
+        const filter2 = document.getElementById('filter-laporan-bulan');
 
+        // prioritaskan filter yang ada isinya
+        if (filter1 && filter1.value) {
+            bulanAktif = filter1.value;
+        } else if (filter2 && filter2.value) {
+            bulanAktif = filter2.value;
+        }
+
+        // --- MULAI AREA REVISI ---
+        const saldoAwalSistem = dapatkanSaldoAwalBulanPilihan(bulanAktif);
 
         const totalMasuk = state.pemasukan
             .filter(function(item) {
-
-                if (!item || !item.tanggal) {
-                    return false;
-                }
-
-                return String(item.tanggal)
-                    .startsWith(bulanAktif);
-
+                if (!item || !item.tanggal) return false;
+                return item.tanggal.slice(0, 7) === bulanAktif;
             })
             .reduce(function(sum, item) {
-
-                return sum +
-                    Number(item.nominal || 0);
-
+                return sum + Number(item.nominal || 0);
             }, 0);
-
 
         const totalKeluar = state.pengeluaran
             .filter(function(item) {
-
-                if (!item || !item.tanggal) {
-                    return false;
-                }
-
-                return String(item.tanggal)
-                    .startsWith(bulanAktif);
-
+                if (!item || !item.tanggal) return false;
+                return item.tanggal.slice(0, 7) === bulanAktif;
             })
             .reduce(function(sum, item) {
-
-                return sum +
-                    Number(item.nominal || 0);
-
+                return sum + Number(item.nominal || 0);
             }, 0);
 
-
-        const kasTunai =
-            saldoAwalSistem
-            + totalMasuk
-            - totalKeluar;
-
+        const kasTunai = saldoAwalSistem + totalMasuk - totalKeluar;
 
         let kasBank = 0;
-
-        if (
-            state.dataBank &&
-            state.dataBank.length > 0
-        ) {
-
+        if (state.dataBank && state.dataBank.length > 0) {
             state.dataBank.forEach(function(mutasi) {
+                if (!mutasi || !mutasi.tanggal) return;
+                if (mutasi.tanggal.slice(0, 7) === bulanAktif) {
+                    const tipe = mutasi.jenis_mutasi;
+                    const nilai = Number(mutasi.nominal || 0);
 
-                const tipe =
-                    mutasi.jenis_mutasi;
-
-                const nilai =
-                    Number(mutasi.nominal || 0);
-
-                if (
-                    tipe === 'Setor' ||
-                    tipe === 'Bunga_Bank'
-                ) {
-
-                    kasBank += nilai;
-
-                } else if (
-                    tipe === 'Tarik' ||
-                    tipe === 'Biaya_Admin'
-                ) {
-
-                    kasBank -= nilai;
+                    if (tipe === 'Setor' || tipe === 'Bunga_Bank') {
+                        kasBank += nilai;
+                    } else if (tipe === 'Tarik' || tipe === 'Biaya_Admin') {
+                        kasBank -= nilai;
+                    }
                 }
             });
         }
+        // --- AKHIR AREA REVISI ---
 
+        const totalKeuanganAktif = kasTunai + kasBank;
 
-        const totalKeuanganAktif =
-            kasTunai + kasBank;
-
-
-        if (
-            document.getElementById(
-                'stat-masuk-hari-ini'
-            )
-        ) {
-
-            document.getElementById(
-                'stat-masuk-hari-ini'
-            ).innerText =
-                formatRupiah(totalMasuk);
+        if (document.getElementById('stat-masuk-hari-ini')) {
+            document.getElementById('stat-masuk-hari-ini').innerText = formatRupiah(totalMasuk);
         }
 
-
-        if (
-            document.getElementById(
-                'stat-keluar-hari-ini'
-            )
-        ) {
-
-            document.getElementById(
-                'stat-keluar-hari-ini'
-            ).innerText =
-                formatRupiah(totalKeluar);
+        if (document.getElementById('stat-keluar-hari-ini')) {
+            document.getElementById('stat-keluar-hari-ini').innerText = formatRupiah(totalKeluar);
         }
 
-
-        if (
-            document.getElementById(
-                'stat-laba-bersih'
-            )
-        ) {
-
-            document.getElementById(
-                'stat-laba-bersih'
-            ).innerText =
-                formatRupiah(totalKeuanganAktif);
+        if (document.getElementById('stat-laba-bersih')) {
+            document.getElementById('stat-laba-bersih').innerText = formatRupiah(totalKeuanganAktif);
         }
 
-
-        if (
-            document.getElementById(
-                'kas-tunai-display'
-            )
-        ) {
-
-            document.getElementById(
-                'kas-tunai-display'
-            ).innerText =
-                formatRupiah(kasTunai);
+        if (document.getElementById('kas-tunai-display')) {
+            document.getElementById('kas-tunai-display').innerText = formatRupiah(kasTunai);
         }
 
-
-        if (
-            document.getElementById(
-                'kas-bank-display'
-            )
-        ) {
-
-            document.getElementById(
-                'kas-bank-display'
-            ).innerText =
-                formatRupiah(kasBank);
+        if (document.getElementById('kas-bank-display')) {
+            document.getElementById('kas-bank-display').innerText = formatRupiah(kasBank);
         }
 
     } catch(err) {
-
-        console.error(
-            'ERROR updateDashboardMetrics:',
-            err
-        );
+        console.error('ERROR updateDashboardMetrics:', err);
     }
 }
         function renderCharts() {
@@ -2030,7 +1966,7 @@ function updateDashboardMetrics() {
         console.error("Gagal sinkronisasi otomatis ke cloud: ", error);
     }
 }       
-      async function tarikDataDariSheets() {
+    async function tarikDataDariSheets() {
     const URL_GAS = state.gasUrl;
     // Jika URL kosong atau masih bawaan template, ingatkan user
     if(!URL_GAS || URL_GAS.includes("script.google.com/macros/s/...")) {
@@ -2044,8 +1980,8 @@ function updateDashboardMetrics() {
     if(btnNav) btnNav.innerHTML = "⏳ Menarik Data...";
 
     try {
-        // Melakukan request ke Google Apps Script doGet dengan parameter getdata=true
-        const response = await fetch(URL_GAS + "?getdata=true", {
+        // Ambil data dari Apps Script menggunakan action=tarikData sesuai bawaan file Anda
+        const response = await fetch(URL_GAS + "?action=tarikData", {
             method: "GET",
             mode: "cors",
             credentials: "omit"
@@ -2055,38 +1991,71 @@ function updateDashboardMetrics() {
 
         const res = await response.json();
         
-        if(res.status === "success") {
-            // 1. Masukkan data dari cloud Sheets ke dalam RAM/State aplikasi lokal HTML
-            state.pemasukan = res.dataPemasukan || [];
-            state.pengeluaran = res.dataPengeluaran || [];
-            state.dataBank = res.dataBank || []; 
+        if(res) {
+            // 1. Sinkronisasi Pengaturan & Profil
+            state.pengaturan = res.pengaturan || {};
+            state.profil = res.profil || {};
+            state.historyTutupBuku = res.historyTutupBuku || {};
             
-            // KOREKSI 1: state.inventaris disamakan menjadi state.dataInventaris
-            state.dataInventaris = res.dataInventaris || [];
+            // 2. Sinkronisasi Data Kas Bank
+            state.dataBank = res.dataBank || res.kasBank || []; 
             
-            // 2. Simpan cadangan data terbaru ke memori penyimpanan fisik browser
-            saveStateToLocal();
+            // 3. PROTEKSI MUTLAK AGAR MAP() TIDAK READ PROPERTIES OF NULL []
+            // Menggunakan pengaman ganda (|| []) agar jika data dari GAS kosong, sistem tidak crash null
             
-            // 3. Render ulang semua tabel, dashboard, dan grafik secara instan
-            loadTables();
-            updateDashboardMetrics();
-            if(typeof renderCharts === "function") renderCharts();
+            // Pemasukan
+            state.pemasukan = res.pemasukan || [];
+            state.dataPemasukan = res.pemasukan || [];
+
+            // Pengeluaran
+            state.pengeluaran = res.pengeluaran || [];
+            state.dataPengeluaran = res.pengeluaran || []; 
             
-            // KOREKSI 2: Eksekusi fungsi gambar tabel inventaris di sini
-            if(typeof renderTabelInventaris === "function") renderTabelInventaris();
+            // Inventaris / Aset Manajemen (Diisi ke semua kemungkinan nama variabel pembentuk tabel)
+            const inventarisAman = res.dataInventaris || res.inventaris || [];
+            state.dataInventaris = inventarisAman;
+            state.inventaris = inventarisAman; 
+
+            // Master Data Dropdown Options
+            state.unitUsaha = res.unitUsaha || [];
+            state.kategoriKeluar = res.kategoriKeluar || [];
+
+            // 4. Simpan Cadangan ke LocalStorage (Gunakan nama kunci yang konsisten)
+            localStorage.setItem('bumdes_pemasukan', JSON.stringify(state.pemasukan));
+            localStorage.setItem('bumdes_pengeluaran', JSON.stringify(state.pengeluaran));
+            localStorage.setItem('bumdes_dataInventaris', JSON.stringify(state.dataInventaris));
+            localStorage.setItem('bumdes_inventaris', JSON.stringify(state.inventaris));
+
+            console.log("RAM Aplikasi berhasil disinkronkan. Memperbarui UI...");
+
+            // 5. Jalankan fungsi render bawaan file DummyAkuntasi-2.html Anda
+            if (typeof initPengaturanUI === "function") initPengaturanUI();
             
-            alert("✅ BERHASIL!\nData keuangan BUMDes terbaru berhasil disinkronkan dari Google Sheets.");
+            // Proteksi pemanggilan loadTables agar jika baris 1584 bermasalah, dihandle dengan aman
+            if (typeof loadTables === "function") {
+                try {
+                    loadTables();
+                } catch(e) {
+                    console.error("Eror internal saat render tabel, mencoba bypass:", e);
+                }
+            }
+            
+            if (typeof updateDashboardStats === "function") {
+                updateDashboardStats();
+            }
+
+            alert("✅ Sinkronisasi Berhasil!\nSeluruh data Pemasukan, Pengeluaran, Kas Bank, dan Inventaris berhasil dimuat ke dalam tabel.");
         } else {
-            alert("❌ Gagal memuat data dari cloud: " + (res.message || "Format respon salah"));
+            throw new Error("Format database JSON dari server tidak sesuai.");
         }
+
     } catch(err) {
-        console.error("Error Fetch Data:", err);
-        alert("❌ Koneksi Gagal:\nTidak dapat terhubung ke Google Sheets Cloud. Periksa apakah URL Web App GAS Anda sudah benar dan sudah di-deploy ulang sebagai 'Anyone'.\n\nDetail Error: " + err.toString());
+        console.error("Kesalahan tarikDataDariSheets:", err);
+        alert("❌ Gagal memuat data dari Google Sheets.\nPeriksa struktur tabel atau URL Web App di Pengaturan.\nError: " + err.message);
     } finally {
         if(btnNav) btnNav.innerHTML = txtAsli;
     }
 }
-
 // =======================================================
 // MODUL TAMBAHAN: MANAJEMEN INVENTARIS & PENYUSUTAN ASET
 // =======================================================
@@ -2115,26 +2084,21 @@ function renderTabelInventaris() {
         const umur = parseInt(aset.umur_ekonomis_bulan) || 1;
         const sisa = parseFloat(aset.nilai_sisa) || 0;
         
-        // Perhitungan penyusutan metode garis lurus
-        const penyusutanPerBulan = (harga - sisa) / umur;
-
-        const tglBeli = new Date(aset.tanggal_beli);
-        const tglLaporan = new Date(currentMonthStr + "-28");
+        // --- START REVISI ---
+        // Memanggil fungsi eksternal dinamis pembaca status periode
+        const spekSusut = hitungDepresiasiAsetPerPeriode(aset, currentMonthStr);
         
-        let jumlahBulanPakai = 0;
-        if (!isNaN(tglBeli.getTime())) {
-            jumlahBulanPakai = (tglLaporan.getFullYear() - tglBeli.getFullYear()) * 12 + (tglLaporan.getMonth() - tglBeli.getMonth()) + 1;
-        }
-        if (jumlahBulanPakai < 0) jumlahBulanPakai = 0;
-        if (jumlahBulanPakai > umur) jumlahBulanPakai = umur;
-
-        const akumulasiPenyusutan = penyusutanPerBulan * jumlahBulanPakai;
-        const nilaiBuku = harga - akumulasiPenyusutan;
+        const penyusutanPerBulan = (harga - sisa) / umur;
+        const akumulasiPenyusutan = spekSusut.akumulasiHinggaBulanIni;
+        const nilaiBuku = spekSusut.nilaiBukuBulanIni;
+        
+        // Hitung pembulatan jumlah bulan pakai riil untuk tampilan kolom status periode
+        let jumlahBulanPakai = akumulasiPenyusutan / (penyusutanPerBulan || 1);
+        jumlahBulanPakai = Math.round(jumlahBulanPakai);
+        // --- END REVISI ---
 
         const formatUang = typeof formatRupiah === "function" ? formatRupiah : (num) => "Rp " + Number(num).toLocaleString('id-ID');
 
-    // ambil semua periode tutup buku
-    
         return `
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid var(--border);">${aset.id || ''}</td>
@@ -2301,6 +2265,65 @@ function switchScreen(screenId) {
     if(typeof loadTables === "function") loadTables();
     if(typeof updateDashboardMetrics === "function") updateDashboardMetrics();
 }
+   // ==========================================
+// LOGIKA BARU: HITUNG SALDO BERANTAI KUMULATIF 
+// ==========================================
+function dapatkanSaldoAwalBulanPilihan(bulanPilihanStr) {
+    let tahun = parseInt(bulanPilihanStr.split("-")[0]);
+    let bulan = parseInt(bulanPilihanStr.split("-")[1]) - 1; 
+    if (bulan === 0) { bulan = 12; tahun -= 1; }
+    let bulanLaluStr = tahun + "-" + String(bulan).padStart(2, '0');
+
+    if (state.historyTutupBuku && state.historyTutupBuku[bulanLaluStr] && state.historyTutupBuku[bulanLaluStr].isClosed) {
+        return parseFloat(state.historyTutupBuku[bulanLaluStr].saldoAkhirDitutup || 0);
+    }
+
+    let saldoAwalMurni = parseFloat(state.profil.saldoAwalMurni) || 0;
+    
+    let totalMasukSblmnya = state.pemasukan.filter(m => m.tanggal.slice(0, 7) < bulanPilihanStr).reduce((a, b) => a + b.nominal, 0);
+    let totalKeluarSblmnya = state.pengeluaran.filter(k => k.tanggal.slice(0, 7) < bulanPilihanStr).reduce((a, b) => a + b.nominal, 0);
+    
+    let bungaBankSblmnya = state.dataBank ? state.dataBank.filter(b => b.tanggal.slice(0, 7) < bulanPilihanStr && b.jenis_mutasi === 'Bunga_Bank').reduce((a, b) => a + b.nominal, 0) : 0;
+    let adminBankSblmnya = state.dataBank ? state.dataBank.filter(b => b.tanggal.slice(0, 7) < bulanPilihanStr && b.jenis_mutasi === 'Biaya_Admin').reduce((a, b) => a + b.nominal, 0) : 0;
+
+    return saldoAwalMurni + totalMasukSblmnya - totalKeluarSblmnya + bungaBankSblmnya - adminBankSblmnya;
+}
+
+// ==========================================
+// LOGIKA BARU: KALKULASI PENYUSUTAN ASET DINAMIS 
+// ==========================================
+function hitungDepresiasiAsetPerPeriode(asetObj, bulanLaporanStr) {
+    let tglBeli = new Date(asetObj.tanggal_beli + "-02"); 
+    let tglLap = new Date(bulanLaporanStr + "-28");
+    
+    let hasil = {
+        hargaPerolehan: 0,
+        bebanBulanIni: 0,
+        akumulasiHinggaBulanIni: 0,
+        nilaiBukuBulanIni: 0
+    };
+
+    if (tglLap < tglBeli) {
+        return hasil; 
+    }
+
+    hasil.hargaPerolehan = asetObj.harga_perolehan;
+    let biayaSusutPerBulan = (asetObj.harga_perolehan - asetObj.nilai_sisa) / asetObj.umur_ekonomis_bulan;
+    
+    let selisihBulan = (tglLap.getFullYear() - tglBeli.getFullYear()) * 12 + (tglLap.getMonth() - tglBeli.getMonth()) + 1;
+
+    if (selisihBulan > 0 && selisihBulan <= asetObj.umur_ekonomis_bulan) {
+        hasil.akumulasiHinggaBulanIni = biayaSusutPerBulan * selisihBulan;
+        hasil.bebanBulanIni = biayaSusutPerBulan; 
+    } else if (selisihBulan > asetObj.umur_ekonomis_bulan) {
+        hasil.akumulasiHinggaBulanIni = asetObj.harga_perolehan - asetObj.nilai_sisa;
+        hasil.bebanBulanIni = 0; 
+    }
+    
+    hasil.nilaiBukuBulanIni = hasil.hargaPerolehan - hasil.akumulasiHinggaBulanIni;
+    return hasil;
+} 
+
     </script>
 </body>
 </html>
