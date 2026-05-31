@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Akuntansi BUMDes</title>
+<title>Akuntansi BUMDes Campurejo Sukses Mandiri</title>
 
 <!--
 =====================================================
@@ -54,6 +54,9 @@ button,.btn{border:0;border-radius:10px;padding:11px 15px;cursor:pointer;font-we
 .report-table th{background:#f1f5f9;color:#111827;border-bottom:2px solid #111827}.row-cat{background:#f8fafc;font-weight:900}.row-total{background:#e2e8f0;font-weight:900}
 .ttd{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;margin-top:45px}.ttd div{height:115px;display:flex;flex-direction:column;justify-content:space-between;font-size:.9rem}
 .help{color:var(--muted);font-size:.92rem;line-height:1.5}#loading{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;color:white;font-weight:900;align-items:center;justify-content:center}
+
+.btn-small{padding:6px 9px;font-size:.78rem;border-radius:8px}.aksi-wrap{display:flex;gap:6px;flex-wrap:wrap}.riwayat-info{font-size:.86rem;color:var(--muted);font-weight:700}
+
 @media(max-width:800px){#app{grid-template-columns:1fr}.menu{display:grid;grid-template-columns:repeat(2,1fr)}.topbar{flex-direction:column;align-items:flex-start}.ttd{grid-template-columns:repeat(2,1fr)}}
 @media print{body *{visibility:hidden!important}.section.active .report,.section.active .report *{visibility:visible!important}.section.active .report{position:absolute!important;left:0!important;top:0!important;width:100%!important;margin:0!important;padding:0!important;border:none!important;box-shadow:none!important}.no-print,.sidebar,.topbar,.card.no-print,.copyright-app,button,input,select,textarea{display:none!important}}
 </style>
@@ -105,13 +108,31 @@ button,.btn{border:0;border-radius:10px;padding:11px 15px;cursor:pointer;font-we
           <div class="metric" style="background:#f59e0b"><small>Nilai Buku Aset</small><div id="m-aset">Rp 0</div></div>
         </div>
         <div class="grid-2" style="margin-top:18px">
-          <div class="card"><div class="card-title">Grafik Kas</div><canvas id="chartKas" height="130"></canvas></div>
-          <div class="card"><div class="card-title">Panduan Cepat</div><p class="help">Input transaksi harian, data bank, dan inventaris. Laporan Laba Rugi, Neraca, dan Arus Kas siap print untuk pemeringkatan. Area print hanya dokumen laporan.</p></div>
+          <div class="card">
+            <div class="card-title">📊 Grafik Kas Bulanan</div>
+            <canvas id="chartKas" height="130"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">🏆 Pendapatan Unit Usaha</div>
+            <canvas id="chartUnitUsaha" height="130"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">🥧 Kontribusi Unit Usaha</div>
+            <canvas id="chartKontribusiUnit" height="130"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">🎯 Ringkasan Kinerja</div>
+            <div id="ringkasan-kinerja" class="help"></div>
+          </div>
         </div>
       </section>
 
       <section id="sec-transaksi" class="section">
-        <div class="card"><div class="card-title">Input Transaksi Harian</div>
+        <div class="card">
+          <div class="card-title">
+            <span id="judul-form-transaksi">Input Transaksi Harian</span>
+            <span id="mode-edit-transaksi" class="riwayat-info"></span>
+          </div>
           <div class="grid-3">
             <div class="form-group"><label>Tanggal</label><input type="date" id="trx-tanggal"></div>
             <div class="form-group"><label>Jenis</label><select id="trx-jenis" onchange="aturKategori()"><option value="MASUK">Pemasukan</option><option value="KELUAR">Pengeluaran</option></select></div>
@@ -120,7 +141,36 @@ button,.btn{border:0;border-radius:10px;padding:11px 15px;cursor:pointer;font-we
             <div class="form-group"><label>Petugas Login</label><input id="trx-petugas" readonly placeholder="Otomatis sesuai login"></div>
           </div>
           <div class="form-group"><label>Keterangan</label><input id="trx-keterangan"></div>
-          <button class="btn-primary" onclick="simpanTransaksi()">💾 Simpan Transaksi</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="btn-simpan-transaksi" class="btn-primary" onclick="simpanTransaksi()">💾 Simpan Transaksi</button>
+            <button id="btn-batal-edit-transaksi" class="btn-light" style="display:none" onclick="batalEditTransaksi()">Batal Edit</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>📋 Riwayat Transaksi Terbaru</span>
+            <span id="info-riwayat-transaksi" class="riwayat-info">Tampil 20 data</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Jenis</th>
+                  <th>Unit/Kategori</th>
+                  <th>Keterangan</th>
+                  <th>Petugas</th>
+                  <th class="text-right">Nominal</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-transaksi-input"></tbody>
+            </table>
+          </div>
+          <div style="display:flex;justify-content:center;margin-top:12px">
+            <button id="btn-load-more-transaksi" class="btn-light" onclick="loadMoreTransaksi()">Tampilkan 20 Lagi</button>
+          </div>
         </div>
       </section>
 
@@ -276,7 +326,7 @@ let state={gasUrl:DEFAULT_CONFIG.GAS_URL,transaksi:JSON.parse(localStorage.getIt
 let chartKas=null;
 let currentUserLogin = JSON.parse(localStorage.getItem("simp_current_user") || "null");
 function saveLocal(){localStorage.setItem("simp_trx",JSON.stringify(state.transaksi));localStorage.setItem("simp_bank",JSON.stringify(state.bank));localStorage.setItem("simp_aset",JSON.stringify(state.aset));localStorage.setItem("simp_unit",JSON.stringify(state.unitUsaha));localStorage.setItem("simp_kat",JSON.stringify(state.kategoriKeluar));localStorage.setItem("simp_profil",JSON.stringify(state.profil))}
-window.onload=function(){$("today").innerText=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});["trx-tanggal","bank-tanggal","aset-tanggal"].forEach(id=>$(id).value=todayStr());applyBranding(); isiDropdownPeriode(); if(typeof updatePetugasLogin==="function") updatePetugasLogin();loadProfilForm();aturKategori();renderAll();if(state.gasUrl&&state.gasUrl!=="PASTE_URL_GAS_DISINI")tarikDataDariSheets(false)}
+window.onload=function(){$("today").innerText=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});["trx-tanggal","bank-tanggal","aset-tanggal"].forEach(id=>$(id).value=todayStr());applyBranding(); isiDropdownPeriode(); if(typeof updatePetugasLogin==="function") updatePetugasLogin();loadProfilForm();aturKategori();renderAll();setTimeout(renderDashboardAnalitik,100);if(state.gasUrl&&state.gasUrl!=="PASTE_URL_GAS_DISINI")tarikDataDariSheets(false)}
 function applyBranding(){const logo=state.profil.logo||DEFAULT_CONFIG.LOGO_URL||"";["login-logo","logo-side","report-logo"].forEach(id=>{if($(id))$(id).src=logo});$("brand-name").innerText=state.profil.nama||"BUMDes"}
 function login(){
   const u=$("login-user").value.trim();
@@ -818,6 +868,364 @@ function tambahKategori(){
 
   renderAll();
 }
+
+
+// ======================================================
+// DASHBOARD ANALITIK UNIT USAHA
+// ======================================================
+var chartUnitUsaha = null;
+var chartKontribusiUnit = null;
+
+function getBulanDashboard(){
+  if($("filter-bulan") && $("filter-bulan").value) return $("filter-bulan").value;
+  if($("lap-bulan") && $("lap-bulan").value) return $("lap-bulan").value;
+  return monthStr();
+}
+
+function dataPendapatanUnitUsaha(bulan){
+  var data = {};
+  (state.unitUsaha || []).forEach(function(u){ data[u] = 0; });
+
+  (state.transaksi || [])
+    .filter(function(t){
+      return t.jenis === "MASUK" && String(t.tanggal || "").slice(0,7) === bulan;
+    })
+    .forEach(function(t){
+      var key = t.kategori || "Tanpa Unit";
+      if(data[key] === undefined) data[key] = 0;
+      data[key] += Number(t.nominal || 0);
+    });
+
+  var labels = [];
+  var values = [];
+  Object.keys(data).forEach(function(k){
+    if(Number(data[k] || 0) > 0){
+      labels.push(k);
+      values.push(Number(data[k] || 0));
+    }
+  });
+  return {labels: labels, values: values};
+}
+
+function renderDashboardAnalitik(){
+  var bulan = getBulanDashboard();
+  var d = dataPendapatanUnitUsaha(bulan);
+  renderChartUnitUsaha(d.labels, d.values);
+  renderChartKontribusiUnit(d.labels, d.values);
+  renderRingkasanKinerjaUnit(d.labels, d.values);
+}
+
+function renderChartUnitUsaha(labels, values){
+  var ctx = $("chartUnitUsaha");
+  if(!ctx) return;
+  if(chartUnitUsaha) chartUnitUsaha.destroy();
+
+  chartUnitUsaha = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels.length ? labels : ["Belum ada data"],
+      datasets: [{ label: "Pendapatan Unit Usaha", data: values.length ? values : [0] }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(context){ return formatRupiah(context.raw || 0); } } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: function(value){ return formatRupiah(value); } } }
+      }
+    }
+  });
+}
+
+function renderChartKontribusiUnit(labels, values){
+  var ctx = $("chartKontribusiUnit");
+  if(!ctx) return;
+  if(chartKontribusiUnit) chartKontribusiUnit.destroy();
+
+  chartKontribusiUnit = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels.length ? labels : ["Belum ada data"],
+      datasets: [{ data: values.length ? values : [1] }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context){
+              var total = context.dataset.data.reduce(function(a,b){ return a + Number(b || 0); }, 0);
+              var val = Number(context.raw || 0);
+              var pct = total ? ((val / total) * 100).toFixed(1) : "0.0";
+              return context.label + ": " + formatRupiah(val) + " (" + pct + "%)";
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderRingkasanKinerjaUnit(labels, values){
+  var el = $("ringkasan-kinerja");
+  if(!el) return;
+
+  if(!values.length){
+    el.innerHTML = `<div style="padding:12px;border:1px dashed var(--border);border-radius:12px;text-align:center;color:var(--muted)">Belum ada pemasukan unit usaha pada periode ini.</div>`;
+    return;
+  }
+
+  var total = values.reduce(function(a,b){ return a + Number(b || 0); }, 0);
+  var max = Math.max.apply(null, values);
+  var idx = values.indexOf(max);
+  var unitTerbaik = labels[idx] || "-";
+  var persen = total ? ((max / total) * 100).toFixed(1) : "0.0";
+
+  el.innerHTML = `
+    <div style="display:grid;gap:10px">
+      <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:12px">
+        <div style="font-size:12px;color:var(--muted);font-weight:800">Unit Usaha Terbaik</div>
+        <div style="font-size:20px;font-weight:900;color:var(--primary)">🏆 ${unitTerbaik}</div>
+      </div>
+      <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:12px">
+        <div style="font-size:12px;color:var(--muted);font-weight:800">Pendapatan Tertinggi</div>
+        <div style="font-size:20px;font-weight:900;color:var(--success)">${formatRupiah(max)}</div>
+      </div>
+      <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:12px">
+        <div style="font-size:12px;color:var(--muted);font-weight:800">Kontribusi terhadap Pendapatan</div>
+        <div style="font-size:20px;font-weight:900">${persen}%</div>
+      </div>
+      <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:12px">
+        <div style="font-size:12px;color:var(--muted);font-weight:800">Total Pendapatan Unit</div>
+        <div style="font-size:20px;font-weight:900">${formatRupiah(total)}</div>
+      </div>
+    </div>`;
+}
+
+if(typeof renderAll === "function" && !window.__dashboardAnalitikWrapped){
+  window.__dashboardAnalitikWrapped = true;
+  var _renderAllDashboardAnalitik = renderAll;
+  renderAll = function(){
+    _renderAllDashboardAnalitik();
+    setTimeout(renderDashboardAnalitik, 50);
+  };
+}
+
+
+// ======================================================
+// RIWAYAT TRANSAKSI DI BAWAH FORM + EDIT + LOAD MORE
+// ======================================================
+var editingTransaksiId = null;
+var transaksiLimit = 20;
+
+function urutTransaksiTerbaru(){
+  return (state.transaksi || []).slice().sort(function(a,b){
+    var ta = String(a.tanggal || '') + String(a.id || '');
+    var tb = String(b.tanggal || '') + String(b.id || '');
+    return tb.localeCompare(ta);
+  });
+}
+
+function labelJenisTransaksi(jenis){
+  return jenis === 'MASUK' ? 'Pemasukan' : 'Pengeluaran';
+}
+
+function badgeJenisTransaksi(jenis){
+  return `<span class="badge ${jenis === 'MASUK' ? 'badge-masuk' : 'badge-keluar'}">${labelJenisTransaksi(jenis)}</span>`;
+}
+
+function renderAksiTransaksi(id){
+  return `<div class="aksi-wrap">
+    <button class="btn-warning btn-small" onclick="editTransaksi('${id}')">Edit</button>
+    <button class="btn-danger btn-small" onclick="hapusTransaksi('${id}')">Hapus</button>
+  </div>`;
+}
+
+function renderRiwayatTransaksiInput(){
+  var tbody = $('tbl-transaksi-input');
+  if(!tbody) return;
+
+  var data = urutTransaksiTerbaru();
+  var tampil = data.slice(0, transaksiLimit);
+
+  if(!tampil.length){
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Belum ada transaksi. Setelah simpan, riwayat akan muncul di sini.</td></tr>`;
+  } else {
+    tbody.innerHTML = tampil.map(function(t){
+      return `<tr>
+        <td>${t.tanggal || ''}</td>
+        <td>${badgeJenisTransaksi(t.jenis)}</td>
+        <td>${t.kategori || ''}</td>
+        <td>${t.keterangan || ''}</td>
+        <td>${t.petugas || ''}</td>
+        <td class="text-right ${t.jenis === 'MASUK' ? 'text-success' : 'text-danger'}">${formatRupiah(t.nominal)}</td>
+        <td>${renderAksiTransaksi(t.id)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  var info = $('info-riwayat-transaksi');
+  if(info) info.innerText = `Tampil ${Math.min(transaksiLimit, data.length)} dari ${data.length} transaksi`;
+
+  var btn = $('btn-load-more-transaksi');
+  if(btn) btn.style.display = data.length > transaksiLimit ? 'inline-flex' : 'none';
+}
+
+function loadMoreTransaksi(){
+  transaksiLimit += 20;
+  renderRiwayatTransaksiInput();
+}
+
+function batalEditTransaksi(){
+  editingTransaksiId = null;
+  if($('trx-tanggal')) $('trx-tanggal').value = todayStr();
+  if($('trx-jenis')) $('trx-jenis').value = 'MASUK';
+  aturKategori();
+  if($('trx-keterangan')) $('trx-keterangan').value = '';
+  if($('trx-nominal')) $('trx-nominal').value = '';
+  updatePetugasLogin();
+  updateModeEditTransaksi();
+}
+
+function updateModeEditTransaksi(){
+  var mode = $('mode-edit-transaksi');
+  var btnSimpan = $('btn-simpan-transaksi');
+  var btnBatal = $('btn-batal-edit-transaksi');
+
+  if(editingTransaksiId){
+    if(mode) mode.innerText = 'Mode koreksi/edit transaksi';
+    if(btnSimpan) btnSimpan.innerText = '✅ Update Transaksi';
+    if(btnBatal) btnBatal.style.display = 'inline-flex';
+  } else {
+    if(mode) mode.innerText = '';
+    if(btnSimpan) btnSimpan.innerText = '💾 Simpan Transaksi';
+    if(btnBatal) btnBatal.style.display = 'none';
+  }
+}
+
+function editTransaksi(id){
+  var trx = (state.transaksi || []).find(function(x){ return x.id === id; });
+  if(!trx) return alert('Transaksi tidak ditemukan.');
+
+  var bulanLama = String(trx.tanggal || '').slice(0,7);
+  if(periodeTerkunci(bulanLama)) return alert('Periode sudah tutup buku. Transaksi tidak bisa diedit.');
+
+  editingTransaksiId = id;
+  showSec('transaksi', null);
+
+  $('trx-tanggal').value = trx.tanggal || todayStr();
+  $('trx-jenis').value = trx.jenis || 'MASUK';
+  aturKategori();
+  $('trx-kategori').value = trx.kategori || '';
+  $('trx-keterangan').value = trx.keterangan || '';
+  $('trx-nominal').value = Number(trx.nominal || 0);
+  updatePetugasLogin();
+  updateModeEditTransaksi();
+
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function sinkronEditTransaksiKeSheet(dataBaru){
+  if(!state.gasUrl || state.gasUrl === 'PASTE_URL_GAS_DISINI') return;
+  try{
+    // GAS yang dipakai sudah punya delete_transaksi dan add_transaksi.
+    // Edit dilakukan dengan hapus baris lama lalu tambah ulang data yang sudah dikoreksi.
+    await syncToGasBackend('delete_transaksi', {id:dataBaru.id});
+    await syncToGasBackend('add_transaksi', dataBaru);
+  }catch(e){
+    console.error('Gagal sinkron edit transaksi:', e);
+  }
+}
+
+function ambilPayloadTransaksi(idOverride){
+  return {
+    id: idOverride || ('TRX-' + Date.now().toString().slice(-8)),
+    tanggal: $('trx-tanggal').value,
+    jenis: $('trx-jenis').value,
+    kategori: $('trx-kategori').value,
+    keterangan: $('trx-keterangan').value,
+    nominal: Number($('trx-nominal').value || 0),
+    petugas: getNamaPetugasLogin()
+  };
+}
+
+simpanTransaksi = async function(){
+  updatePetugasLogin();
+
+  var data = ambilPayloadTransaksi(editingTransaksiId);
+  if(!data.tanggal || !data.kategori || !data.nominal) return alert('Lengkapi tanggal, unit/kategori, dan nominal transaksi.');
+
+  var bulanBaru = String(data.tanggal || '').slice(0,7);
+  if(periodeTerkunci(bulanBaru)) return alert('Periode ' + bulanBaru + ' sudah tutup buku. Transaksi tidak bisa disimpan.');
+
+  if(editingTransaksiId){
+    var idx = state.transaksi.findIndex(function(x){ return x.id === editingTransaksiId; });
+    if(idx < 0) return alert('Data lama tidak ditemukan.');
+
+    var bulanLama = String(state.transaksi[idx].tanggal || '').slice(0,7);
+    if(periodeTerkunci(bulanLama)) return alert('Periode lama sudah tutup buku. Transaksi tidak bisa diedit.');
+
+    state.transaksi[idx] = data;
+    saveLocal();
+    await sinkronEditTransaksiKeSheet(data);
+    alert('Transaksi berhasil diperbarui.');
+  } else {
+    state.transaksi.unshift(data);
+    saveLocal();
+    await syncToGasBackend('add_transaksi', data);
+    alert('Transaksi tersimpan.');
+  }
+
+  editingTransaksiId = null;
+  $('trx-keterangan').value = '';
+  $('trx-nominal').value = '';
+  $('trx-tanggal').value = todayStr();
+  $('trx-jenis').value = 'MASUK';
+  aturKategori();
+  updatePetugasLogin();
+  updateModeEditTransaksi();
+  transaksiLimit = Math.max(transaksiLimit, 20);
+  renderAll();
+};
+
+hapusTransaksi = function(id){
+  var trx = (state.transaksi || []).find(function(x){ return x.id === id; });
+  if(trx && periodeTerkunci(String(trx.tanggal || '').slice(0,7))) return alert('Periode sudah tutup buku. Transaksi tidak bisa dihapus.');
+  if(!confirm('Hapus transaksi ini?')) return;
+
+  state.transaksi = (state.transaksi || []).filter(function(t){ return t.id !== id; });
+  saveLocal();
+  syncToGasBackend('delete_transaksi', {id:id});
+
+  if(editingTransaksiId === id) batalEditTransaksi();
+  renderAll();
+};
+
+renderTable = function(){
+  isiDropdownFilterKategori();
+  var rows = transaksiTerfilter();
+  $('tbl-transaksi').innerHTML = rows.map(function(t){
+    return `<tr>
+      <td>${t.id}</td>
+      <td>${t.tanggal}</td>
+      <td>${badgeJenisTransaksi(t.jenis)}</td>
+      <td>${t.kategori}</td>
+      <td>${t.keterangan || ''}</td>
+      <td>${t.petugas || ''}</td>
+      <td class="text-right ${t.jenis === 'MASUK' ? 'text-success' : 'text-danger'}">${formatRupiah(t.nominal)}</td>
+      <td>${renderAksiTransaksi(t.id)}</td>
+    </tr>`;
+  }).join('');
+};
+
+var _renderAllRiwayatTransaksi = renderAll;
+renderAll = function(){
+  _renderAllRiwayatTransaksi();
+  renderRiwayatTransaksiInput();
+  updateModeEditTransaksi();
+};
 
 </script>
 </body>
