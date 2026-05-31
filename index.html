@@ -57,6 +57,12 @@ button,.btn{border:0;border-radius:10px;padding:11px 15px;cursor:pointer;font-we
 
 .btn-small{padding:6px 9px;font-size:.78rem;border-radius:8px}.aksi-wrap{display:flex;gap:6px;flex-wrap:wrap}.riwayat-info{font-size:.86rem;color:var(--muted);font-weight:700}
 
+.periode-card{border-left:6px solid var(--primary);background:linear-gradient(135deg,var(--card),var(--bg))}
+.periode-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#ccfbf1;color:#0f766e;font-weight:900;font-size:.82rem}
+[data-theme="dark"] .periode-pill{background:#134e4a;color:#99f6e4}
+.warn-box{padding:10px 12px;border-radius:12px;background:#fffbeb;color:#92400e;border:1px solid #fde68a;font-size:.9rem;font-weight:700}
+
+
 @media(max-width:800px){#app{grid-template-columns:1fr}.menu{display:grid;grid-template-columns:repeat(2,1fr)}.topbar{flex-direction:column;align-items:flex-start}.ttd{grid-template-columns:repeat(2,1fr)}}
 @media print{body *{visibility:hidden!important}.section.active .report,.section.active .report *{visibility:visible!important}.section.active .report{position:absolute!important;left:0!important;top:0!important;width:100%!important;margin:0!important;padding:0!important;border:none!important;box-shadow:none!important}.no-print,.sidebar,.topbar,.card.no-print,.copyright-app,button,input,select,textarea{display:none!important}}
 </style>
@@ -101,9 +107,31 @@ button,.btn{border:0;border-radius:10px;padding:11px 15px;cursor:pointer;font-we
 
     <div class="content">
       <section id="sec-dashboard" class="section active">
+        <div class="card no-print periode-card">
+          <div class="card-title">
+            <span>📅 Periode Aktif Laporan</span>
+            <span id="periode-status-dashboard" class="periode-pill">Periode aktif</span>
+          </div>
+          <div class="grid-3">
+            <div class="form-group">
+              <label>Pilih Periode Aktif</label>
+              <select id="periode-aktif-dashboard" onchange="setPeriodeAktif(this.value)"></select>
+            </div>
+            <div class="form-group">
+              <label>Kunci Input ke Periode Ini</label>
+              <select id="kunci-periode-dashboard" onchange="setKunciPeriodeAktif(this.value)">
+                <option value="YA">Ya, wajib sama periode</option>
+                <option value="TIDAK">Tidak, izinkan beda bulan</option>
+              </select>
+            </div>
+            <div class="form-group" style="justify-content:flex-end">
+              <div class="warn-box">Dashboard, laporan, dan input utama mengikuti periode aktif ini.</div>
+            </div>
+          </div>
+        </div>
         <div class="grid-4">
-          <div class="metric" style="background:#16a34a"><small>Pemasukan Bulan Ini</small><div id="m-in">Rp 0</div></div>
-          <div class="metric" style="background:#dc2626"><small>Pengeluaran Bulan Ini</small><div id="m-out">Rp 0</div></div>
+          <div class="metric" style="background:#16a34a"><small>Pemasukan Periode Aktif</small><div id="m-in">Rp 0</div></div>
+          <div class="metric" style="background:#dc2626"><small>Pengeluaran Periode Aktif</small><div id="m-out">Rp 0</div></div>
           <div class="metric" style="background:#0d9488"><small>Saldo Akhir Berjalan</small><div id="m-kas">Rp 0</div></div>
           <div class="metric" style="background:#f59e0b"><small>Nilai Buku Aset</small><div id="m-aset">Rp 0</div></div>
         </div>
@@ -128,13 +156,36 @@ button,.btn{border:0;border-radius:10px;padding:11px 15px;cursor:pointer;font-we
       </section>
 
       <section id="sec-transaksi" class="section">
+        <div class="card no-print periode-card">
+          <div class="card-title">
+            <span>📅 Periode Aktif Transaksi</span>
+            <span id="periode-status-transaksi" class="periode-pill">Periode aktif</span>
+          </div>
+          <div class="grid-3">
+            <div class="form-group">
+              <label>Pilih Periode Aktif</label>
+              <select id="periode-aktif-transaksi" onchange="setPeriodeAktif(this.value)"></select>
+            </div>
+            <div class="form-group">
+              <label>Aturan Input Tanggal</label>
+              <select id="kunci-periode-transaksi" onchange="setKunciPeriodeAktif(this.value)">
+                <option value="YA">Tanggal wajib sesuai periode</option>
+                <option value="TIDAK">Izinkan beda bulan</option>
+              </select>
+            </div>
+            <div class="form-group" style="justify-content:flex-end">
+              <div id="periode-info-transaksi" class="warn-box">Transaksi akan dicek agar sesuai periode aktif.</div>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-title">
             <span id="judul-form-transaksi">Input Transaksi Harian</span>
             <span id="mode-edit-transaksi" class="riwayat-info"></span>
           </div>
           <div class="grid-3">
-            <div class="form-group"><label>Tanggal</label><input type="date" id="trx-tanggal"></div>
+            <div class="form-group"><label>Tanggal</label><input type="date" id="trx-tanggal" onchange="cekTanggalTransaksiPeriode(true)"></div>
             <div class="form-group"><label>Jenis</label><select id="trx-jenis" onchange="aturKategori()"><option value="MASUK">Pemasukan</option><option value="KELUAR">Pengeluaran</option></select></div>
             <div class="form-group"><label>Unit/Kategori</label><select id="trx-kategori"></select></div>
             <div class="form-group"><label>Nominal</label><input type="number" id="trx-nominal"></div>
@@ -149,7 +200,7 @@ button,.btn{border:0;border-radius:10px;padding:11px 15px;cursor:pointer;font-we
 
         <div class="card">
           <div class="card-title">
-            <span>📋 Riwayat Transaksi Terbaru</span>
+            <span>📋 Riwayat Transaksi Periode Aktif</span>
             <span id="info-riwayat-transaksi" class="riwayat-info">Tampil 20 data</span>
           </div>
           <div class="table-wrap">
@@ -1226,6 +1277,261 @@ renderAll = function(){
   renderRiwayatTransaksiInput();
   updateModeEditTransaksi();
 };
+
+
+// ======================================================
+// SISTEM PERIODE AKTIF + KUNCI PERIODE LAPORAN
+// ======================================================
+var periodeAktifAplikasi = localStorage.getItem("simp_periode_aktif") || monthStr();
+var kunciPeriodeAktif = (localStorage.getItem("simp_kunci_periode_aktif") || "YA");
+
+function getPeriodeAktif(){
+  return periodeAktifAplikasi || monthStr();
+}
+
+function getTanggalAwalPeriode(periode){
+  return (periode || getPeriodeAktif()) + "-01";
+}
+
+function namaPeriodeAktif(){
+  return labelBulanIndonesia(getPeriodeAktif());
+}
+
+function daftarPeriodeAktifLengkap(){
+  var set = new Set();
+
+  var aktif = getPeriodeAktif();
+  set.add(aktif);
+  set.add(monthStr());
+
+  // Sediakan semua bulan pada tahun aktif supaya aplikasi bisa dipakai untuk input transaksi lama.
+  var tahunAktif = Number(String(aktif).slice(0,4)) || new Date().getFullYear();
+  for(var m=1; m<=12; m++){
+    set.add(tahunAktif + "-" + String(m).padStart(2,"0"));
+  }
+
+  (state.transaksi || []).forEach(function(t){ if(t.tanggal) set.add(String(t.tanggal).slice(0,7)); });
+  (state.bank || []).forEach(function(b){ if(b.tanggal) set.add(String(b.tanggal).slice(0,7)); });
+  (state.aset || []).forEach(function(a){ if(a.tanggal_beli) set.add(String(a.tanggal_beli).slice(0,7)); });
+  Object.keys(state.tutupBuku || {}).forEach(function(k){ set.add(k); });
+
+  return Array.from(set).filter(Boolean).sort().reverse();
+}
+
+function isiDropdownPeriodeAktif(){
+  var daftar = daftarPeriodeAktifLengkap();
+  ["periode-aktif-dashboard","periode-aktif-transaksi"].forEach(function(id){
+    var el = $(id);
+    if(!el) return;
+    var lama = el.value || getPeriodeAktif();
+    el.innerHTML = daftar.map(function(p){
+      return `<option value="${p}">${labelBulanIndonesia(p)}</option>`;
+    }).join("");
+    el.value = daftar.includes(lama) ? lama : getPeriodeAktif();
+  });
+
+  ["kunci-periode-dashboard","kunci-periode-transaksi"].forEach(function(id){
+    var el = $(id);
+    if(el) el.value = kunciPeriodeAktif;
+  });
+
+  updateInfoPeriodeAktif();
+}
+
+function updateInfoPeriodeAktif(){
+  var label = "Periode aktif: " + namaPeriodeAktif();
+  ["periode-status-dashboard","periode-status-transaksi"].forEach(function(id){
+    var el = $(id);
+    if(el) el.innerText = label;
+  });
+
+  var info = $("periode-info-transaksi");
+  if(info){
+    info.innerText = kunciPeriodeAktif === "YA"
+      ? "Tanggal transaksi wajib berada pada " + namaPeriodeAktif() + ". Jika beda bulan, aplikasi akan memberi peringatan."
+      : "Mode bebas aktif. Tanggal beda bulan masih diizinkan.";
+  }
+}
+
+function setKunciPeriodeAktif(value){
+  kunciPeriodeAktif = value === "TIDAK" ? "TIDAK" : "YA";
+  localStorage.setItem("simp_kunci_periode_aktif", kunciPeriodeAktif);
+  isiDropdownPeriodeAktif();
+  cekTanggalTransaksiPeriode(false);
+}
+
+function setPeriodeAktif(periode){
+  if(!periode) return;
+  periodeAktifAplikasi = periode;
+  localStorage.setItem("simp_periode_aktif", periodeAktifAplikasi);
+
+  // Semua filter utama dibuat konsisten mengikuti periode aktif.
+  if($("filter-bulan")) $("filter-bulan").value = periodeAktifAplikasi;
+  if($("lap-bulan")) $("lap-bulan").value = periodeAktifAplikasi;
+  if($("tutup-bulan")) $("tutup-bulan").value = periodeAktifAplikasi;
+
+  // Form transaksi diarahkan ke tanggal awal periode aktif.
+  if($("trx-tanggal")){
+    var bulanTanggal = String($("trx-tanggal").value || "").slice(0,7);
+    if(kunciPeriodeAktif === "YA" && bulanTanggal !== periodeAktifAplikasi){
+      $("trx-tanggal").value = getTanggalAwalPeriode(periodeAktifAplikasi);
+    }
+  }
+
+  isiDropdownPeriodeAktif();
+  transaksiLimit = 20;
+  renderAll();
+  setTimeout(renderDashboardAnalitik, 80);
+}
+
+function cekTanggalTransaksiPeriode(showAlert){
+  var el = $("trx-tanggal");
+  if(!el || !el.value) return true;
+
+  var bulanTanggal = String(el.value).slice(0,7);
+  var aktif = getPeriodeAktif();
+
+  if(kunciPeriodeAktif === "YA" && bulanTanggal !== aktif){
+    if(showAlert !== false){
+      alert(
+        "Tanggal transaksi tidak sesuai periode aktif.\n\n" +
+        "Periode aktif: " + labelBulanIndonesia(aktif) + "\n" +
+        "Tanggal dipilih: " + labelBulanIndonesia(bulanTanggal) + "\n\n" +
+        "Aplikasi akan mengembalikan tanggal ke periode aktif agar laporan tidak keliru."
+      );
+    }
+    el.value = getTanggalAwalPeriode(aktif);
+    return false;
+  }
+
+  return true;
+}
+
+function transaksiPeriodeAktif(){
+  var aktif = getPeriodeAktif();
+  return (state.transaksi || []).filter(function(t){
+    return String(t.tanggal || "").slice(0,7) === aktif;
+  });
+}
+
+// Tambahkan periode aktif ke dropdown bawaan.
+var _semuaPeriodeDataPeriodLock = semuaPeriodeData;
+semuaPeriodeData = function(){
+  var base = _semuaPeriodeDataPeriodLock();
+  var set = new Set(base.concat(daftarPeriodeAktifLengkap()));
+  return Array.from(set).filter(Boolean).sort().reverse();
+};
+
+// Dashboard harus selalu membaca periode aktif, bukan tanggal sistem / filter yang tercecer.
+updateDashboard = function(){
+  var b = getPeriodeAktif();
+  var r = getRingkasanBulan(b);
+  $("m-in").innerText = formatRupiah(r.pemasukan);
+  $("m-out").innerText = formatRupiah(r.pengeluaran);
+  $("m-kas").innerText = formatRupiah(r.saldoAkhir);
+  $("m-aset").innerText = formatRupiah(r.nilaiAset);
+};
+
+// Grafik analitik unit usaha juga wajib membaca periode aktif.
+getBulanDashboard = function(){
+  return getPeriodeAktif();
+};
+
+// Riwayat di bawah input transaksi hanya menampilkan periode aktif agar operator tidak bingung.
+urutTransaksiTerbaru = function(){
+  return transaksiPeriodeAktif().slice().sort(function(a,b){
+    var ta = String(a.tanggal || "") + String(a.id || "");
+    var tb = String(b.tanggal || "") + String(b.id || "");
+    return tb.localeCompare(ta);
+  });
+};
+
+// Filter data transaksi default mengikuti periode aktif.
+var _resetFilterPeriodLock = resetFilter;
+resetFilter = function(){
+  if($("filter-bulan")) $("filter-bulan").value = getPeriodeAktif();
+  if($("filter-jenis")) $("filter-jenis").value = "SEMUA";
+  isiDropdownFilterKategori();
+  if($("filter-kategori")) $("filter-kategori").value = "SEMUA";
+  renderAll();
+};
+
+// Simpan transaksi dicek agar sesuai periode aktif.
+var _simpanTransaksiPeriodLock = simpanTransaksi;
+simpanTransaksi = async function(){
+  if(!cekTanggalTransaksiPeriode(true)) return;
+
+  var dataBulan = String($("trx-tanggal").value || "").slice(0,7);
+  if(kunciPeriodeAktif === "YA" && dataBulan !== getPeriodeAktif()){
+    return alert("Transaksi ditolak karena tidak sesuai periode aktif.");
+  }
+
+  await _simpanTransaksiPeriodLock();
+
+  if($("trx-tanggal")) $("trx-tanggal").value = getTanggalAwalPeriode(getPeriodeAktif());
+  setTimeout(renderDashboardAnalitik, 80);
+};
+
+// Saat edit transaksi beda periode, arahkan user pindah periode aktif dulu.
+var _editTransaksiPeriodLock = editTransaksi;
+editTransaksi = function(id){
+  var trx = (state.transaksi || []).find(function(x){ return x.id === id; });
+  if(!trx) return alert("Transaksi tidak ditemukan.");
+
+  var bulanTrx = String(trx.tanggal || "").slice(0,7);
+  if(kunciPeriodeAktif === "YA" && bulanTrx !== getPeriodeAktif()){
+    if(confirm("Transaksi ini berada pada " + labelBulanIndonesia(bulanTrx) + ".\n\nPindahkan periode aktif ke bulan tersebut untuk mengedit?")){
+      setPeriodeAktif(bulanTrx);
+    } else {
+      return;
+    }
+  }
+
+  _editTransaksiPeriodLock(id);
+};
+
+// Batal edit kembali ke tanggal awal periode aktif.
+var _batalEditTransaksiPeriodLock = batalEditTransaksi;
+batalEditTransaksi = function(){
+  _batalEditTransaksiPeriodLock();
+  if($("trx-tanggal")) $("trx-tanggal").value = getTanggalAwalPeriode(getPeriodeAktif());
+};
+
+// Laporan dan tutup buku default ikut periode aktif.
+var _generateLaporanPeriodLock = generateLaporan;
+generateLaporan = function(){
+  if($("lap-bulan") && !$("lap-bulan").value) $("lap-bulan").value = getPeriodeAktif();
+  _generateLaporanPeriodLock();
+};
+
+var _renderTutupBukuPeriodLock = renderTutupBuku;
+renderTutupBuku = function(){
+  if($("tutup-bulan") && !$("tutup-bulan").value) $("tutup-bulan").value = getPeriodeAktif();
+  _renderTutupBukuPeriodLock();
+};
+
+// Render semua komponen tambahan periode.
+var _renderAllPeriodLock = renderAll;
+renderAll = function(){
+  isiDropdownPeriodeAktif();
+
+  if($("filter-bulan") && !$("filter-bulan").value) $("filter-bulan").value = getPeriodeAktif();
+  if($("lap-bulan") && !$("lap-bulan").value) $("lap-bulan").value = getPeriodeAktif();
+  if($("tutup-bulan") && !$("tutup-bulan").value) $("tutup-bulan").value = getPeriodeAktif();
+
+  _renderAllPeriodLock();
+
+  isiDropdownPeriodeAktif();
+  updateInfoPeriodeAktif();
+  setTimeout(renderDashboardAnalitik, 50);
+};
+
+// Inisialisasi awal setelah semua fungsi terbaca.
+setTimeout(function(){
+  isiDropdownPeriodeAktif();
+  setPeriodeAktif(getPeriodeAktif());
+  if($("trx-tanggal")) $("trx-tanggal").value = getTanggalAwalPeriode(getPeriodeAktif());
+}, 150);
 
 </script>
 </body>
