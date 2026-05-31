@@ -17,8 +17,8 @@ Produk digital berlisensi.
 
 <script>
 const DEFAULT_CONFIG = {
-  GAS_URL: "https://script.google.com/macros/s/AKfycbyugeLt5CvWvJzLS3vUCZ-RNwG17it7oyxQPxuGNQxIIXGTs9-w9356-f_lbBForHqc/exec",
-  LOGO_URL: "https://www.image2url.com/r2/default/images/1780218808528-d6e035b0-35d5-428f-b549-58201d2749a7.png",
+  GAS_URL: "PASTE_URL_GAS_DISINI",
+  LOGO_URL: "PASTE_URL_LOGO_DISINI",
   COPYRIGHT: "© 2026 Dhian Widhi A"
 };
 </script>
@@ -341,35 +341,9 @@ function lapBank(b){setReportHeader("REKAP DATA BANK",b);const rows=state.bank.f
 function loadProfilForm(){["nama","alamat","telp","email"].forEach(k=>$("cfg-"+k).value=state.profil[k]||"");$("cfg-saldo-awal").value=state.profil.saldoAwal||0;$("cfg-utang").value=state.profil.utang||0;$("cfg-modal").value=state.profil.modal||0;for(let i=1;i<=4;i++){$("cfg-role"+i).value=state.profil["role"+i]||"";$("cfg-nama"+i).value=state.profil["nama"+i]||""}}
 function simpanProfil(){state.profil={...state.profil,nama:$("cfg-nama").value,alamat:$("cfg-alamat").value,telp:$("cfg-telp").value,email:$("cfg-email").value,logo:DEFAULT_CONFIG.LOGO_URL,saldoAwal:Number($("cfg-saldo-awal").value||0),utang:Number($("cfg-utang").value||0),modal:Number($("cfg-modal").value||0),role1:$("cfg-role1").value,nama1:$("cfg-nama1").value,role2:$("cfg-role2").value,nama2:$("cfg-nama2").value,role3:$("cfg-role3").value,nama3:$("cfg-nama3").value,role4:$("cfg-role4").value,nama4:$("cfg-nama4").value};saveLocal();syncToGasBackend("updateProfil",state.profil);applyBranding();renderAll();alert("Profil tersimpan")}
 function renderMasterList(){$("list-unit").innerHTML=state.unitUsaha.map(u=>`<li>${u} <button class="btn-danger" style="padding:2px 6px;font-size:11px" onclick="hapusUnit('${u}')">x</button></li>`).join("");$("list-kategori").innerHTML=state.kategoriKeluar.map(k=>`<li>${k} <button class="btn-danger" style="padding:2px 6px;font-size:11px" onclick="hapusKategori('${k}')">x</button></li>`).join("");aturKategori()}
-function tambahUnit(){const v=$("new-unit").value.trim();if(!v)return;state.unitUsaha.push(v);$("new-unit").value="";saveLocal();syncToGasBackend("updateMaster",{unitUsaha:state.unitUsaha,kategoriKeluar:state.kategoriKeluar});renderAll()}function tambahKategori(){const v=$("new-kategori").value.trim();if(!v)return;state.kategoriKeluar.push(v);$("new-kategori").value="";saveLocal();syncToGasBackend("updateMaster",{unitUsaha:state.unitUsaha,kategoriKeluar:state.kategoriKeluar});renderAll()}function hapusUnit(v){
-  if(!confirm("Hapus unit usaha: " + v + "?")) return;
-
-  state.unitUsaha = state.unitUsaha.filter(x => x !== v);
-
-  saveLocal();
-
-  syncToGasBackend("updateMaster", {
-    unitUsaha: state.unitUsaha,
-    kategoriKeluar: state.kategoriKeluar
-  });
-
-  renderAll();
-}function hapusKategori(v){
-  if(!confirm("Hapus kategori: " + v + "?")) return;
-
-  state.kategoriKeluar = state.kategoriKeluar.filter(x => x !== v);
-
-  saveLocal();
-
-  syncToGasBackend("updateMaster", {
-    unitUsaha: state.unitUsaha,
-    kategoriKeluar: state.kategoriKeluar
-  });
-
-  renderAll();
-}
-async function syncToGasBackend(action,data){if(!state.gasUrl||state.gasUrl==="https://script.google.com/macros/s/AKfycbyugeLt5CvWvJzLS3vUCZ-RNwG17it7oyxQPxuGNQxIIXGTs9-w9356-f_lbBForHqc/exec")return;try{await fetch(state.gasUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,data})})}catch(e){console.error(e)}}
-async function tarikDataDariSheets(showNotif=true){if(!state.gasUrl||state.gasUrl==="https://script.google.com/macros/s/AKfycbyugeLt5CvWvJzLS3vUCZ-RNwG17it7oyxQPxuGNQxIIXGTs9-w9356-f_lbBForHqc/exec"){if(showNotif)alert("URL GAS belum diganti di DEFAULT_CONFIG.");return}try{showLoading();const r=await fetch(state.gasUrl+"?action=tarikData");const res=await r.json();if(res.transaksi)state.transaksi=res.transaksi;if(res.bank)state.bank=res.bank;if(res.aset)state.aset=res.aset.map(a=>({id:a.id,nama:a.nama,tanggal_beli:a.tanggal_beli,harga:Number(a.harga||0),umur:Number(a.umur||1),sisa:Number(a.sisa||0)}));if(res.profil_sistem){let p={};res.profil_sistem.forEach(row=>p[row.Parameter_Key]=row.Value_Data);state.profil={...state.profil,...p,logo:DEFAULT_CONFIG.LOGO_URL};["saldoAwal","utang","modal"].forEach(k=>state.profil[k]=Number(state.profil[k]||0))}if(res.master){if(res.master.unitUsaha)state.unitUsaha=res.master.unitUsaha;if(res.master.kategoriKeluar)state.kategoriKeluar=res.master.kategoriKeluar}saveLocal();applyBranding();loadProfilForm();renderAll();if(showNotif)alert("Data berhasil ditarik")}catch(e){alert("Gagal tarik data: "+e.message)}finally{hideLoading()}}
+function tambahUnit(){const v=$("new-unit").value.trim();if(!v)return;state.unitUsaha.push(v);$("new-unit").value="";saveLocal();syncToGasBackend("updateMaster",{unitUsaha:state.unitUsaha,kategoriKeluar:state.kategoriKeluar});renderAll()}function tambahKategori(){const v=$("new-kategori").value.trim();if(!v)return;state.kategoriKeluar.push(v);$("new-kategori").value="";saveLocal();syncToGasBackend("updateMaster",{unitUsaha:state.unitUsaha,kategoriKeluar:state.kategoriKeluar});renderAll()}function hapusUnit(v){state.unitUsaha=state.unitUsaha.filter(x=>x!==v);saveLocal();renderAll()}function hapusKategori(v){state.kategoriKeluar=state.kategoriKeluar.filter(x=>x!==v);saveLocal();renderAll()}
+async function syncToGasBackend(action,data){if(!state.gasUrl||state.gasUrl==="PASTE_URL_GAS_DISINI")return;try{await fetch(state.gasUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,data})})}catch(e){console.error(e)}}
+async function tarikDataDariSheets(showNotif=true){if(!state.gasUrl||state.gasUrl==="PASTE_URL_GAS_DISINI"){if(showNotif)alert("URL GAS belum diganti di DEFAULT_CONFIG.");return}try{showLoading();const r=await fetch(state.gasUrl+"?action=tarikData");const res=await r.json();if(res.transaksi)state.transaksi=res.transaksi;if(res.bank)state.bank=res.bank;if(res.aset)state.aset=res.aset.map(a=>({id:a.id,nama:a.nama,tanggal_beli:a.tanggal_beli,harga:Number(a.harga||0),umur:Number(a.umur||1),sisa:Number(a.sisa||0)}));if(res.profil_sistem){let p={};res.profil_sistem.forEach(row=>p[row.Parameter_Key]=row.Value_Data);state.profil={...state.profil,...p,logo:DEFAULT_CONFIG.LOGO_URL};["saldoAwal","utang","modal"].forEach(k=>state.profil[k]=Number(state.profil[k]||0))}if(res.master){if(res.master.unitUsaha)state.unitUsaha=res.master.unitUsaha;if(res.master.kategoriKeluar)state.kategoriKeluar=res.master.kategoriKeluar}saveLocal();applyBranding();loadProfilForm();renderAll();if(showNotif)alert("Data berhasil ditarik")}catch(e){alert("Gagal tarik data: "+e.message)}finally{hideLoading()}}
 function backupJSON(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="backup-akuntansi-bumdes-simple.json";a.click()}
 
 
@@ -764,6 +738,86 @@ renderAll = function(){
   updatePetugasLogin();
   _oldRenderAllPetugas();
 };
+
+
+// ======================================================
+// FIX MASTER UNIT/KATEGORI: HAPUS JUGA UPDATE KE GOOGLE SHEET
+// ======================================================
+function hapusUnit(v){
+  if(!confirm("Hapus unit usaha: " + v + "?")) return;
+
+  state.unitUsaha = state.unitUsaha.filter(function(x){
+    return x !== v;
+  });
+
+  saveLocal();
+
+  syncToGasBackend("updateMaster", {
+    unitUsaha: state.unitUsaha,
+    kategoriKeluar: state.kategoriKeluar
+  });
+
+  renderAll();
+}
+
+function hapusKategori(v){
+  if(!confirm("Hapus kategori pengeluaran: " + v + "?")) return;
+
+  state.kategoriKeluar = state.kategoriKeluar.filter(function(x){
+    return x !== v;
+  });
+
+  saveLocal();
+
+  syncToGasBackend("updateMaster", {
+    unitUsaha: state.unitUsaha,
+    kategoriKeluar: state.kategoriKeluar
+  });
+
+  renderAll();
+}
+
+
+// ======================================================
+// FIX TAMBAH MASTER AMAN
+// ======================================================
+function tambahUnit(){
+  const v = $("new-unit").value.trim();
+  if(!v) return;
+
+  if(!state.unitUsaha.includes(v)){
+    state.unitUsaha.push(v);
+  }
+
+  $("new-unit").value = "";
+  saveLocal();
+
+  syncToGasBackend("updateMaster", {
+    unitUsaha: state.unitUsaha,
+    kategoriKeluar: state.kategoriKeluar
+  });
+
+  renderAll();
+}
+
+function tambahKategori(){
+  const v = $("new-kategori").value.trim();
+  if(!v) return;
+
+  if(!state.kategoriKeluar.includes(v)){
+    state.kategoriKeluar.push(v);
+  }
+
+  $("new-kategori").value = "";
+  saveLocal();
+
+  syncToGasBackend("updateMaster", {
+    unitUsaha: state.unitUsaha,
+    kategoriKeluar: state.kategoriKeluar
+  });
+
+  renderAll();
+}
 
 </script>
 </body>
